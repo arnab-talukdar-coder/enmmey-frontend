@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/5;
+  }
+
+  .glass-card {
+    @apply bg-[#181A20]/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl shadow-black/80;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-500 to-white;
+  }
+}
+
+body {
+  @apply bg-brand-900 text-white font-sans antialiased overflow-x-hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-display tracking-tight;
+}
+
+#root {
+  @apply min-h-screen relative;
+}
