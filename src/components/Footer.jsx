@@ -8,7 +8,7 @@ export default function Footer() {
 
                     {/* Brand */}
                     <div className="max-w-sm">
-                        <div className="text-2xl font-bold text-white mb-4 lowercase tracking-tight">enmmey</div>
+                        <div className="text-2xl font-bold text-white mb-4 tracking-tight">Enmmey</div>
                         <p className="text-white/60 text-sm leading-relaxed mb-2">
                             Influencer marketing for brands that care about what they measure.
                         </p>
@@ -52,8 +52,8 @@ export default function Footer() {
                                 </a>
                             </li>
                             <li>
-                                <a href="mailto:client.servicing@enmmey.com" className="hover:text-white transition-colors">
-                                    client.servicing@enmmey.com
+                                <a href="mailto:Sudipta@enmmey.com" className="hover:text-white transition-colors">
+                                    Sudipta@enmmey.com
                                 </a>
                             </li>
                             <li className="leading-relaxed">

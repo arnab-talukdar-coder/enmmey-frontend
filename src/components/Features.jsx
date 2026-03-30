@@ -51,9 +51,9 @@ export default function Features() {
                             transition={{ delay: idx * 0.1, duration: 0.6 }}
                             className="glass-card p-8 hover:bg-white/[0.08] transition-all duration-300 group border-white/5"
                         >
-                            <div className="w-12 h-12 rounded-xl bg-brand-800 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-brand-700 transition-all duration-300">
+                            {/* <div className="w-12 h-12 rounded-xl bg-brand-800 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-brand-700 transition-all duration-300">
                                 <span className="text-brand-accent font-semibold">{idx + 1}</span>
-                            </div>
+                            </div> */}
                             <h3 className="text-xl font-bold text-white mb-4">{feature.title}</h3>
                             <p className="text-white/60 mb-6 leading-relaxed text-sm">{feature.description}</p>
 

@@ -37,10 +37,13 @@ export default function Navbar() {
         >
             <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                 {/* Logo */}
-                <div className="flex items-center gap-2 cursor-pointer z-50">
-                    <img src={logo} alt="Enmmey Logo" className="h-8 md:h-10 object-contain" />
+                <div className="flex items-center gap-2">
+                    <img
+                        src={logo}
+                        alt="Enmmey Logo"
+                        className="w-28 sm:w-32 md:w-40 object-contain my-2"
+                    />
                 </div>
-
                 {/* Desktop Links */}
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-white/80">
                     {[

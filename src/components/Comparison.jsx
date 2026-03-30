@@ -3,22 +3,22 @@ import { Check } from 'lucide-react';
 
 const whyFeatures = [
     {
-        icon: "🌿",
+        icon: "",
         title: "Green by Design",
         description: "Sustainable, clutter-free campaigns that respect user attention and deliver real value."
     },
     {
-        icon: "💎",
+        icon: "",
         title: "Transparent Pricing",
         description: "No hidden markups. Clear creator, media, and management fees — always."
     },
     {
-        icon: "🗺️",
+        icon: "",
         title: "Pan-India Reach",
         description: "Creators and niche communities across Tier 1–3 cities for maximum coverage."
     },
     {
-        icon: "🎯",
+        icon: "",
         title: "Conversion-first Mindset",
         description: "Every campaign mapped to funnel metrics — not vanity numbers."
     }
@@ -118,14 +118,6 @@ export default function Comparison() {
                         <span className="flex items-center gap-2"><span className="text-brand-accent">✓</span> Response within 24 hours</span>
                         <span className="flex items-center gap-2"><span className="text-brand-accent">✓</span> No spam ever</span>
                         <span className="flex items-center gap-2"><span className="text-brand-accent">✓</span> Free strategy outline</span>
-                    </div>
-                    <div className="hidden md:block">
-                        <a href="https://wa.me/916290331812?text=Hi%20Enmmey!%20I'm%20interested%20in%20influencer%20marketing%20services." target="_blank" rel="noopener noreferrer">
-                            <button className="bg-brand-500 hover:bg-brand-accent text-brand-900 px-10 py-4 rounded-full font-bold transition-all duration-300 hover:shadow-[0_0_20px_rgba(196,214,0,0.4)] flex items-center gap-2 mx-auto relative z-10 text-lg">
-                                Start a Conversation on WhatsApp
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                            </button>
-                        </a>
                     </div>
                     <p className="mt-6 text-white/40 text-sm relative z-10">or email us at <a href="mailto:client.servicing@enmmey.com" className="text-brand-accent hover:underline">client.servicing@enmmey.com</a></p>
                 </motion.div>

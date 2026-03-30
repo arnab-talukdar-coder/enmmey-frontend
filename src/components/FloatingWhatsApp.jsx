@@ -15,7 +15,7 @@ export default function FloatingWhatsApp() {
             transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 1.5 }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            className="fixed bottom-6 right-5 z-50 flex items-center justify-center w-14 h-14 rounded-full shadow-[0_0_24px_rgba(196,214,0,0.45)] md:hidden"
+            className="fixed bottom-6 right-5 z-50 flex items-center justify-center w-14 h-14 rounded-full shadow-[0_0_24px_rgba(196,214,0,0.45)]"
             style={{ backgroundColor: '#C4D600' }}
         >
             {/* WhatsApp SVG icon */}

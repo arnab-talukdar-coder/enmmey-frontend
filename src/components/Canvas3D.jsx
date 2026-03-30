@@ -26,7 +26,7 @@ function ParticleRing() {
     }, [count]);
 
     useFrame((state, delta) => {
-        ref.current.rotation.y -= delta * 0.05;
+        ref.current.rotation.y -= delta * 0.36;
         ref.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.1;
     });
 
@@ -50,7 +50,7 @@ function FloatingShapes() {
     const groupRef = useRef();
 
     useFrame((state, delta) => {
-        groupRef.current.rotation.y += delta * 0.05;
+        groupRef.current.rotation.y += delta * 0.35;
     });
 
     return (

@@ -2,19 +2,19 @@ import { motion } from 'framer-motion';
 
 const steps = [
     {
-        number: "01",
+        number: "",
         title: "Discover",
         description: "We understand your goals, audience, and budget to craft the perfect strategy. Audience DNA, creator scoring, and offer packaging.",
         tag: "Strategy"
     },
     {
-        number: "02",
+        number: "",
         title: "Match & Create",
         description: "We handpick creators and craft the content strategy that resonates. Creative pairings, scripts, approvals, and go-live QA.",
         tag: "Execution"
     },
     {
-        number: "03",
+        number: "",
         title: "Launch & Optimize",
         description: "We run, track, and iterate until your KPIs are hit and exceeded. Cohort readouts, creative swaps, and retargeting loops.",
         tag: "Growth"
