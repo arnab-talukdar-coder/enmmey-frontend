@@ -3,14 +3,15 @@ import Canvas3D from './Canvas3D';
 
 export default function Hero() {
     return (
-        <section className="relative min-h-screen flex items-center pt-24 pb-40 overflow-hidden bg-brand-900 z-10">
-            {/* Subtle radial gradient to highlight center */}
+        <section className="relative flex flex-col pt-24 overflow-hidden bg-brand-900 z-10">
+            {/* Subtle radial gradient */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(196,214,0,0.12)_0,rgba(15,16,20,1)_70%)] pointer-events-none z-0"></div>
 
             {/* 3D Canvas Background */}
             <Canvas3D />
 
-            <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 lg:gap-8 items-center relative z-10 w-full">
+            {/* Main content */}
+            <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-10 lg:gap-8 items-center relative z-10 w-full py-16 lg:py-24">
 
                 {/* Text Content */}
                 <motion.div
@@ -47,14 +48,14 @@ export default function Hero() {
                     </div>
                 </motion.div>
 
-                {/* Hero Illustration / Statistics Cards */}
+                {/* Campaign Performance Card — visible on all screens */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 1, delay: 0.2 }}
-                    className="relative lg:h-[600px] flex items-center justify-center lg:justify-end"
+                    className="relative z-10 flex items-center justify-center lg:justify-end"
                 >
-                    <div className="glass-card p-6 relative z-20 w-full max-w-sm">
+                    <div className="glass-card p-6 relative z-20 w-full max-w-sm bg-[#181A20]/95">
                         <div className="flex items-center justify-between mb-4">
                             <div>
                                 <p className="text-white/60 text-xs font-medium uppercase tracking-wider">Campaign Performance</p>
@@ -97,27 +98,27 @@ export default function Hero() {
                         </div>
                     </div>
 
-                    {/* Decorative elements behind the card */}
+                    {/* Decorative glow */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[400px] max-h-[400px] bg-brand-500/20 rounded-full blur-[100px] -z-10"></div>
                 </motion.div>
             </div>
 
-            {/* Bottom stats banner integrated into hero */}
-            <div className="absolute bottom-0 left-0 right-0 border-t border-white/5 bg-brand-900/50 backdrop-blur-md">
-                <div className="max-w-7xl mx-auto px-6 py-6 flex flex-wrap justify-between gap-6 text-center text-sm">
-                    <div className="flex-1 min-w-[150px]">
+            {/* Stats banner — inline in flow, no absolute positioning */}
+            <div className="border-t border-white/5 bg-brand-900/50 backdrop-blur-md relative z-10">
+                <div className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center text-sm">
+                    <div>
                         <span className="block text-2xl font-bold text-white mb-1">5B+</span>
                         <span className="text-white/50 text-xs uppercase tracking-wider">Reach Generated</span>
                     </div>
-                    <div className="flex-1 min-w-[150px]">
+                    <div>
                         <span className="block text-2xl font-bold text-white mb-1">200+</span>
                         <span className="text-white/50 text-xs uppercase tracking-wider">Campaigns Delivered</span>
                     </div>
-                    <div className="flex-1 min-w-[150px]">
+                    <div>
                         <span className="block text-2xl font-bold text-white mb-1">5L+</span>
                         <span className="text-white/50 text-xs uppercase tracking-wider">Vetted Influencers</span>
                     </div>
-                    <div className="flex-1 min-w-[150px]">
+                    <div>
                         <span className="block text-2xl font-bold text-white mb-1">100+</span>
                         <span className="text-white/50 text-xs uppercase tracking-wider">Happy Clients</span>
                     </div>
