@@ -41,10 +41,12 @@ export default function Hero() {
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                             </button>
                         </a>
-                        <button className="px-8 py-4 rounded-full font-semibold border border-white/10 hover:bg-white/5 transition-colors gap-2 flex items-center text-white">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                            Watch Our Story
-                        </button>
+                        <a href="https://wa.me/916290331812?text=Hi%20Enmmey!%20I'm%20interested%20in%20influencer%20marketing%20services." target="_blank" rel="noopener noreferrer">
+                            <button className="px-8 py-4 rounded-full font-semibold border border-white/10 hover:bg-white/5 transition-colors gap-2 flex items-center text-white">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                                Watch Our Story
+                            </button>
+                        </a>
                     </div>
                 </motion.div>
 
