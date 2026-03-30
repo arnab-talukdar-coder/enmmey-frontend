@@ -6,6 +6,7 @@ import Process from './components/Process';
 import Results from './components/Results';
 import Comparison from './components/Comparison';
 import Footer from './components/Footer';
+import FloatingWhatsApp from './components/FloatingWhatsApp';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Comparison />
       </main>
       <Footer />
+      <FloatingWhatsApp />
     </>
   );
 }

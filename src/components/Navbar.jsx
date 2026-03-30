@@ -8,13 +8,15 @@ export default function Navbar() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const scrollTo = (id) => {
-        const el = document.getElementById(id);
-        if (el) {
-            const offset = 80; // fixed navbar height
-            const top = el.getBoundingClientRect().top + window.scrollY - offset;
-            window.scrollTo({ top, behavior: 'smooth' });
-        }
         setIsMobileMenuOpen(false);
+        setTimeout(() => {
+            const el = document.getElementById(id);
+            if (el) {
+                const offset = 80;
+                const top = el.getBoundingClientRect().top + window.scrollY - offset;
+                window.scrollTo({ top, behavior: 'smooth' });
+            }
+        }, 300); // wait for mobile menu exit animation
     };
 
     useEffect(() => {
