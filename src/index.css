@@ -17,6 +17,10 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   @apply bg-brand-900 text-white font-sans antialiased overflow-x-hidden;
 }

@@ -7,6 +7,16 @@ export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    const scrollTo = (id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            const offset = 80; // fixed navbar height
+            const top = el.getBoundingClientRect().top + window.scrollY - offset;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }
+        setIsMobileMenuOpen(false);
+    };
+
     useEffect(() => {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 50);
@@ -31,17 +41,30 @@ export default function Navbar() {
 
                 {/* Desktop Links */}
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-white/80">
-                    <a href="#" className="hover:text-white transition-colors duration-200">Work</a>
-                    <a href="#" className="hover:text-white transition-colors duration-200">Creator Hub</a>
-                    <a href="#" className="hover:text-white transition-colors duration-200">Platform</a>
-                    <a href="#" className="hover:text-white transition-colors duration-200">About</a>
+                    {[
+                        { label: 'Services', id: 'services' },
+                        { label: 'Process', id: 'process' },
+                        { label: 'Case Studies', id: 'results' },
+                        { label: 'Why Enmmey', id: 'why' },
+                        { label: 'Contact', id: 'contact' },
+                    ].map(({ label, id }) => (
+                        <button
+                            key={id}
+                            onClick={() => scrollTo(id)}
+                            className="hover:text-white transition-colors duration-200 cursor-pointer"
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Action Button */}
                 <div className="hidden md:flex items-center gap-4">
-                    <button className="bg-brand-500 hover:bg-brand-accent text-brand-900 px-6 py-2.5 rounded-full font-bold transition-all duration-300 hover:shadow-[0_0_20px_rgba(196,214,0,0.4)]">
-                        Book a Demo
-                    </button>
+                    <a href="https://wa.me/916290331812?text=Hi%20Enmmey!%20I'm%20interested%20in%20influencer%20marketing%20services." target="_blank" rel="noopener noreferrer">
+                        <button className="bg-brand-500 hover:bg-brand-accent text-brand-900 px-6 py-2.5 rounded-full font-bold transition-all duration-300 hover:shadow-[0_0_20px_rgba(196,214,0,0.4)]">
+                            Book a Call
+                        </button>
+                    </a>
                 </div>
 
                 {/* Mobile menu button */}
@@ -63,13 +86,26 @@ export default function Navbar() {
                         className="md:hidden bg-brand-800 border-b border-white/5 overflow-hidden"
                     >
                         <div className="flex flex-col px-6 py-4 gap-4">
-                            <a href="#" className="text-white/80 hover:text-white pb-2 border-b border-white/5">Work</a>
-                            <a href="#" className="text-white/80 hover:text-white pb-2 border-b border-white/5">Creator Hub</a>
-                            <a href="#" className="text-white/80 hover:text-white pb-2 border-b border-white/5">Platform</a>
-                            <a href="#" className="text-white/80 hover:text-white pb-2 border-b border-white/5">About</a>
-                            <button className="bg-brand-500 text-white px-6 py-3 rounded-xl font-medium mt-2 w-full">
-                                Book a Demo
-                            </button>
+                            {[
+                                { label: 'Services', id: 'services' },
+                                { label: 'Process', id: 'process' },
+                                { label: 'Case Studies', id: 'results' },
+                                { label: 'Why Enmmey', id: 'why' },
+                                { label: 'Contact', id: 'contact' },
+                            ].map(({ label, id }) => (
+                                <button
+                                    key={id}
+                                    onClick={() => scrollTo(id)}
+                                    className="text-white/80 hover:text-white pb-2 border-b border-white/5 text-left"
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                            <a href="https://wa.me/916290331812?text=Hi%20Enmmey!%20I'm%20interested%20in%20influencer%20marketing%20services." target="_blank" rel="noopener noreferrer">
+                                <button className="bg-brand-500 text-white px-6 py-3 rounded-xl font-medium mt-2 w-full">
+                                    Book a Call
+                                </button>
+                            </a>
                         </div>
                     </motion.div>
                 )

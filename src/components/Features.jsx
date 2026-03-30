@@ -2,30 +2,30 @@ import { motion } from 'framer-motion';
 
 const features = [
     {
-        title: "Data-Driven Influencer Matching",
-        description: "We analyze global audiences to find the perfect voices for your brand, ensuring your message reaches the right people.",
-        points: ["Audience demographics fit", "Engagement rate analysis", "Brand affinity check"]
+        title: "Influencer Strategy & Matching",
+        description: "Data-backed creator selection ensuring the right voices amplify your brand to the most relevant audiences.",
+        points: ["Data-backed creator selection", "Audience & interest fit analysis", "Multi-platform mapping"]
     },
     {
-        title: "Campaign Management & Optimization",
-        description: "End-to-end management from contracting to content approval and performance tracking, optimizing in real-time.",
-        points: ["Automated workflows", "Real-time adjustments", "ROI-focused scaling"]
+        title: "Campaign Creation & Management",
+        description: "End-to-end management from creative briefs to timeline tracking and brand safety compliance.",
+        points: ["Creative briefs & scripts", "Timeline & deliverables tracking", "Brand safety & compliance"]
     },
     {
-        title: "Creative Strategy & Direction",
-        description: "We collaborate with talents to craft compelling narratives that resonate and drive measurable action.",
-        points: ["Trend-aligned concepts", "Authentic storytelling", "High-quality production"]
+        title: "Content & UGC Studio",
+        description: "High-quality content production from Reels and Shorts to long-form collaborations, repurposed across ads and socials.",
+        points: ["Reels & shorts production", "Long-form collaborations", "Repurposing across ads & socials"]
     },
     {
-        title: "360° Detailed Performance Reporting",
-        description: "Transparent dashboards showing exactly where every dollar goes and what it brings back.",
-        points: ["Custom dashboard access", "Attribution tracking", "Actionable insights"]
+        title: "Measurement & Optimization",
+        description: "Transparent dashboards with conversion tracking, cohort analysis, and iterative optimization to maximize ROI.",
+        points: ["Conversion tracking & attribution", "Cohort analysis", "Iterative campaign optimization"]
     }
 ];
 
 export default function Features() {
     return (
-        <section className="py-24 bg-brand-900 border-b border-white/5 relative">
+        <section id="services" className="py-24 bg-brand-900 border-b border-white/5 relative">
             <div className="absolute left-0 top-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
 
             <div className="max-w-7xl mx-auto px-6">
@@ -34,9 +34,11 @@ export default function Features() {
                     <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-6">
                         Performance-led influencer campaigns that feel like products, not placements.
                     </h2>
-                    <p className="text-white/60 text-lg">
-                        We operate at the intersection of creativity and data science. Our proprietary technology platform ensures every campaign is engineered for maximum return on investment.
-                    </p>
+                    <div className="flex flex-wrap gap-6 mt-6 text-sm text-white/60">
+                        <span className="flex items-center gap-2"><span className="text-brand-accent font-semibold">⚡</span> Campaigns live in 3 days</span>
+                        <span className="flex items-center gap-2"><span className="text-brand-accent font-semibold">📊</span> Performance dashboards & QA</span>
+                        <span className="flex items-center gap-2"><span className="text-brand-accent font-semibold">▶</span> YouTube · Instagram · LinkedIn</span>
+                    </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">

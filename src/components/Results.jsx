@@ -1,15 +1,43 @@
 import { motion } from 'framer-motion';
 
 const results = [
-    { brand: "Tech Innovators", metric1: "+145k", label1: "New Followers", metric2: "4.2M", label2: "Impressions" },
-    { brand: "Lifestyle Co.", metric1: "12x", label1: "ROAS", metric2: "85%", label2: "Conversion Rate" },
-    { brand: "Fitness Plus", metric1: "3.5M", label1: "Video Views", metric2: "18%", label2: "Engagement" },
-    { brand: "Beauty Essentials", metric1: "+80k", label1: "App Installs", metric2: "$2.1M", label2: "Revenue Match" }
+    {
+        brand: "D2C Skincare Brand",
+        metric1: "3.8M",
+        label1: "Views",
+        metric2: "4.2x",
+        label2: "ROAS",
+        extra: "1.5x repeat customers"
+    },
+    {
+        brand: "FinTech Startup",
+        metric1: "2.1M",
+        label1: "Reach",
+        metric2: "52K",
+        label2: "App Installs",
+        extra: "₹48 CAC"
+    },
+    {
+        brand: "Lifestyle Brand",
+        metric1: "5.2M",
+        label1: "Impressions",
+        metric2: "320K",
+        label2: "Engagements",
+        extra: "28% brand recall"
+    },
+    {
+        brand: "SaaS Platform",
+        metric1: "1.8M",
+        label1: "Reach",
+        metric2: "2,400",
+        label2: "Sign-ups",
+        extra: "3.8x pipeline"
+    }
 ];
 
 export default function Results() {
     return (
-        <section className="py-24 bg-brand-900 overflow-hidden relative border-b border-white/5">
+        <section id="results" className="py-24 bg-brand-900 overflow-hidden relative border-b border-white/5">
             <div className="max-w-7xl mx-auto px-6">
                 <div className="text-center mb-16">
                     <div className="text-brand-accent text-sm font-semibold tracking-wider uppercase mb-4">Case Studies</div>
@@ -52,6 +80,9 @@ export default function Results() {
                                         {item.metric2}
                                     </div>
                                     <div className="text-white/60 text-sm font-medium">{item.label2}</div>
+                                </div>
+                                <div className="ml-auto self-end">
+                                    <span className="inline-block px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-accent text-xs font-medium">{item.extra}</span>
                                 </div>
                             </div>
                         </motion.div>

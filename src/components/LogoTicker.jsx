@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion';
 
 const brands = [
-    "Microsoft", "Airbnb", "Google", "Stripe", "Spotify", "Netflix"
-]; // Dummy brand names for the banner
+    "Sesa", "EVEREVE", "The Man Company", "Man Matters", "Pratilipi", "CoinDCX",
+    "Ditto", "Bhanzu", "Teachmint", "KUKU FM", "Pocket FM", "Indus Valley"
+];
 
 export default function LogoTicker() {
     return (
-        <div className="py-12 bg-brand-900 border-b border-white/5 overflow-hidden">
+        <div className="py-12 bg-white/[0.02] border-b border-white/5 overflow-hidden">
+            <p className="text-center text-white/40 text-xs font-semibold uppercase tracking-widest mb-8">Trusted by market leaders</p>
             <div className="relative flex whitespace-nowrap overflow-hidden">
                 {/* Subtle fade effect on edges */}
                 <div className="absolute top-0 left-0 w-32 h-full bg-gradient-to-r from-brand-900 to-transparent z-10 pointer-events-none"></div>

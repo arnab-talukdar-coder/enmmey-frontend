@@ -2,22 +2,28 @@ import { motion } from 'framer-motion';
 
 const steps = [
     {
-        title: "1. Match",
-        description: "Identify the perfect creators for your brand using our AI-driven matching engine and audience insights."
+        number: "01",
+        title: "Discover",
+        description: "We understand your goals, audience, and budget to craft the perfect strategy. Audience DNA, creator scoring, and offer packaging.",
+        tag: "Strategy"
     },
     {
-        title: "2. Launch & Optimize",
-        description: "seamless execution and real-time campaign optimization to maximize reach and drive conversions."
+        number: "02",
+        title: "Match & Create",
+        description: "We handpick creators and craft the content strategy that resonates. Creative pairings, scripts, approvals, and go-live QA.",
+        tag: "Execution"
     },
     {
-        title: "3. Scale & Repeat",
-        description: "Analyze performance data to double down on winning strategies and scale your influencer program."
+        number: "03",
+        title: "Launch & Optimize",
+        description: "We run, track, and iterate until your KPIs are hit and exceeded. Cohort readouts, creative swaps, and retargeting loops.",
+        tag: "Growth"
     }
 ];
 
 export default function Process() {
     return (
-        <section className="py-24 bg-brand-900 border-b border-white/5 relative overflow-hidden">
+        <section id="process" className="py-24 bg-brand-900 border-b border-white/5 relative overflow-hidden">
 
             {/* Decorative gradient matching design */}
             <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[radial-gradient(circle_at_center,rgba(196,214,0,0.05)_0,transparent_70%)] pointer-events-none -z-10"></div>
@@ -47,8 +53,10 @@ export default function Process() {
                             </div>
 
                             <div className="glass-card p-8 w-full border-t border-brand-500/20 shadow-[0_-5px_20px_rgba(0,0,0,0.4)]">
+                                <div className="text-brand-accent/60 text-xs font-bold uppercase tracking-widest mb-2">{step.number}</div>
                                 <h3 className="text-xl font-bold text-white mb-4">{step.title}</h3>
                                 <p className="text-white/60 text-sm leading-relaxed">{step.description}</p>
+                                <div className="mt-4 inline-block px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-accent text-xs font-medium">{step.tag}</div>
                             </div>
                         </motion.div>
                     ))}
