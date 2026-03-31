@@ -1,5 +1,7 @@
-import { motion } from 'framer-motion';
-import Canvas3D from './Canvas3D';
+import { motion, LazyMotion, domAnimation } from 'framer-motion';
+import { lazy, Suspense } from 'react';
+
+const Canvas3D = lazy(() => import('./Canvas3D'));
 
 export default function Hero() {
     return (
@@ -8,7 +10,9 @@ export default function Hero() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(196,214,0,0.12)_0,rgba(15,16,20,1)_70%)] pointer-events-none z-0"></div>
 
             {/* 3D Canvas Background */}
-            <Canvas3D />
+            <Suspense fallback={<div className="absolute inset-0 bg-brand-900" />}>
+                <Canvas3D />
+            </Suspense>
 
             {/* Main content */}
             <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-10 lg:gap-8 items-center relative z-10 w-full py-16 lg:py-24">

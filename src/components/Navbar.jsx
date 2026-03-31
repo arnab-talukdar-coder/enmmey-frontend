@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import logo from '../assets/enmmey-logo.png';
 
 export default function Navbar() {
@@ -65,11 +66,11 @@ export default function Navbar() {
 
                 {/* Action Button */}
                 <div className="hidden md:flex items-center gap-4">
-                    <a href="https://wa.me/916290331812?text=Hi%20Enmmey!%20I'm%20interested%20in%20influencer%20marketing%20services." target="_blank" rel="noopener noreferrer">
+                    <Link to="/login">
                         <button className="bg-brand-500 hover:bg-brand-accent text-brand-900 px-6 py-2.5 rounded-full font-bold transition-all duration-300 hover:shadow-[0_0_20px_rgba(196,214,0,0.4)]">
-                            Book a Call
+                            Login
                         </button>
-                    </a>
+                    </Link>
                 </div>
 
                 {/* Mobile menu button */}
@@ -106,11 +107,11 @@ export default function Navbar() {
                                     {label}
                                 </button>
                             ))}
-                            <a href="https://wa.me/916290331812?text=Hi%20Enmmey!%20I'm%20interested%20in%20influencer%20marketing%20services." target="_blank" rel="noopener noreferrer">
+                            <Link to="/login">
                                 <button className="bg-brand-500 text-white px-6 py-3 rounded-xl font-medium mt-2 w-full">
-                                    Book a Call
+                                    Login
                                 </button>
-                            </a>
+                            </Link>
                         </div>
                     </motion.div>
                 )
