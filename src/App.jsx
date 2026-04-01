@@ -1,28 +1,17 @@
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import LogoTicker from './components/LogoTicker';
-import Features from './components/Features';
-import Process from './components/Process';
-import Results from './components/Results';
-import Comparison from './components/Comparison';
-import Footer from './components/Footer';
-import FloatingWhatsApp from './components/FloatingWhatsApp';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
-    <>
-      <Navbar />
-      <main>
-        <Hero />
-        <LogoTicker />
-        <Features />
-        <Process />
-        <Results />
-        <Comparison />
-      </main>
-      <Footer />
-      <FloatingWhatsApp />
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

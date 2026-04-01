@@ -37,3 +37,22 @@ h6 {
 #root {
   @apply min-h-screen relative;
 }
+
+/* Premium Lime-Glass Scrollbar injected for Dashboard Tables */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(24, 26, 32, 0.4); 
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(196, 214, 0, 0.3); /* brand-500 (Lime Green) */
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 214, 0, 0.6); 
+}
