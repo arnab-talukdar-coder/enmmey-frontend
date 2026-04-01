@@ -4,17 +4,50 @@ import { motion } from 'framer-motion';
 import { Lock, User } from 'lucide-react';
 
 const Login = () => {
-  const [userId, setUserId] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  React.useEffect(() => {
+    if (localStorage.getItem('token')) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (userId === 'admin' && password === '1234') {
-      navigate('/dashboard');
-    } else {
-      setError('Invalid ID or password');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("LOGIN SUCCESS RESPONSE: ", data);
+        
+        // Try multiple common token locations
+        const tokenToSave = typeof data === 'string' ? data : data?.token || data?.accessToken || data?.jwt || data?.data?.token || data?.data?.accessToken;
+        
+        if (tokenToSave) {
+          localStorage.setItem('token', tokenToSave);
+          console.log("Token saved successfully!");
+        } else {
+          console.warn("Login succeeded but NO TOKEN was found in the response object!");
+        }
+        
+        navigate('/dashboard', { replace: true });
+      } else {
+        setError('Invalid ID or password');
+      }
+    } catch (err) {
+      console.error("Login API Error:", err);
+      // Fallback or show error
+      setError('Error connecting to the login API');
     }
   };
 
@@ -56,8 +89,8 @@ const Login = () => {
               </div>
               <input
                 type="text"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 className="block w-full pl-10 pr-3 py-3 border border-white/10 rounded-xl bg-white/5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
                 placeholder="Enter your ID"

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Instagram, Youtube, Database, Plus, Edit, Trash2, 
+import {
+  Instagram, Youtube, Database, Plus, Edit, Trash2,
   RefreshCw, Search, LayoutDashboard, Share2, Activity,
-  DatabaseZap, Filter, ChevronLeft, ChevronRight, LogOut, Upload, AlertCircle, CheckCircle, X
+  DatabaseZap, Filter, ChevronLeft, ChevronRight, LogOut, Upload, AlertCircle, CheckCircle, X, Save, Undo2
 } from 'lucide-react';
 
 const TypeBadge = ({ value }) => {
@@ -26,7 +26,7 @@ const GenderBadge = ({ value }) => {
   if (value === 'B') bg = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
   if (value === 'A') bg = 'bg-teal-500/20 text-teal-400 border-teal-500/30';
   if (value === 'R') bg = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-  
+
   return (
     <span className={`px-3 py-1 rounded text-[11px] font-bold border ${bg}`}>
       {value}
@@ -40,7 +40,7 @@ const StatusBadge = ({ value }) => {
   if (value === 'IN PROGRESS') bg = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
   if (value === 'PENDING' || value === 'CONTACTED') bg = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
   if (value === 'REJECTED') bg = 'bg-red-500/20 text-red-400 border-red-500/30';
-  
+
   return (
     <span className={`px-2 py-1 rounded text-[9px] uppercase font-bold tracking-wider border ${bg}`}>
       {value}
@@ -52,40 +52,111 @@ const Checkbox = ({ checked }) => (
   <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer ${checked ? 'bg-brand-500 border-brand-500' : 'border-gray-500/50 hover:border-brand-500 bg-black/20'}`}>
     {checked && (
       <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M1 4L3.5 6.5L9 1" stroke="#0F1014" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M1 4L3.5 6.5L9 1" stroke="#0F1014" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     )}
   </div>
 );
+
+const ExpandableText = ({ text }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = typeof text === 'string' && text.length > 25;
+
+  if (!isLong) return <span>{text}</span>;
+
+  return (
+    <div className="flex flex-col items-center justify-center mx-auto max-w-[250px]">
+      <span className={expanded ? 'whitespace-normal break-words text-left block w-full' : 'line-clamp-1 w-full'}>{text}</span>
+      <button
+        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+        className="text-[10px] text-brand-500 font-bold hover:text-brand-400 mt-1 uppercase tracking-wider flex items-center gap-1"
+      >
+        {expanded ? '▲ Collapse' : '▼ Expand'}
+      </button>
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('database');
   const [isUploading, setIsUploading] = useState(false);
   const [toast, setToast] = useState(null);
+  const [pastedState, setPastedState] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
 
+  const handleUndoPaste = () => {
+    if (!pastedState) return;
+    if (pastedState.tab === 'database') {
+      setRowData(prev => prev.slice(pastedState.records.length));
+    } else {
+      setAnalyticsData(prev => prev.slice(pastedState.records.length));
+    }
+    setPastedState(null);
+    showToast("Pasted records removed.", "success");
+  };
+
+  const handleSavePasted = async () => {
+    if (!pastedState) return;
+    try {
+      showToast("Saving pasted records to API...", "success");
+      console.log("🔥 Posting pasted data to API:", pastedState.records);
+
+      const token = localStorage.getItem('token');
+
+      // Clean internal frontend temp flags before transmission to Java backend
+      const finalRecords = pastedState.records.map(r => {
+        const clean = { ...r };
+        delete clean.tempId;
+        delete clean.isNewUnsaved;
+        return clean;
+      });
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/channels/bulk`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ records: finalRecords }),
+      });
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
+      }
+      if (!response.ok) throw new Error("Failed to update array");
+
+      setTimeout(() => {
+        showToast(`Successfully saved ${pastedState.records.length} pasted records!`, 'success');
+        setPastedState(null);
+      }, 800);
+    } catch (err) {
+      showToast('Error saving records to API.', 'error');
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     setIsUploading(true);
 
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
         const text = event.target.result;
-        
+
         // Simple CSV Parser (Splits by newline, maps headers to values)
         const lines = text.split('\n').filter(line => line.trim() !== '');
         if (lines.length < 2) throw new Error("CSV file is empty or missing headers.");
 
         const headers = lines[0].split(',').map(header => header.trim());
-        
+
         if (headers.length > 50) {
           throw new Error("Maximum 50 columns are allowed.");
         }
@@ -106,14 +177,21 @@ const Dashboard = () => {
 
         console.log("🔥 Decoded CSV into JSON Array:", decodedArray);
 
-        /* 
-          // You will send the 'decodedArray' to your real database API like this:
-          const response = await fetch('http://187.127.140.151/api/insert-records', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ records: decodedArray }),
-          });
-        */
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/channels/bulk`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ records: decodedArray }),
+        });
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
+        }
+        if (!response.ok) throw new Error("Failed to save array data");
 
         // For now, simulating the success response from API:
         setTimeout(() => {
@@ -134,117 +212,347 @@ const Dashboard = () => {
     reader.readAsText(file);
   };
 
-  const [analyticsData] = useState([
-    {
-      slNo: '1',
-      channelName: 'Tech Burner',
-      channelLink: 'youtube.com/techburner',
-      platform: 'YouTube',
-      brandKey: 'BRD-4601',
-      productName: 'Smartwatch V2',
-      deliverables: 'Dedicated Review',
-      brandPriceComplete: '₹2,50,000',
-      deliverablesCount: '1',
-      requiredPricePer: '₹2,50,000',
-      projectManager: 'Sonia Das',
-      pmComment: 'Contract signed',
-      pmStatus: 'APPROVED',
-      influencerAssociate: 'Priya Patel',
-      channelPricePer: '₹2,00,000',
-      iaStatus: 'APPROVED',
-      iaComment: 'Advance cleared',
-      postingDate: '10th Nov 2026'
-    },
-    {
-      slNo: '2',
-      channelName: 'Kritika Khurana',
-      channelLink: 'instagram.com/thatbohogirl',
-      platform: 'Instagram',
-      brandKey: 'BRD-4602',
-      productName: 'Summer Collection',
-      deliverables: '2 Reels + 3 Stories',
-      brandPriceComplete: '₹1,50,000',
-      deliverablesCount: '5',
-      requiredPricePer: '₹30,000',
-      projectManager: 'Rahul Sharma',
-      pmComment: 'Outfits delivered',
-      pmStatus: 'IN PROGRESS',
-      influencerAssociate: 'Amit Kumar',
-      channelPricePer: '₹20,000',
-      iaStatus: 'CONTACTED',
-      iaComment: 'Sizing confirmed',
-      postingDate: '05th Nov 2026'
-    }
-  ]);
+  // Listen for Excel/Sheets copy-paste events anywhere on the screen!
+  useEffect(() => {
+    const handleGlobalPaste = (e) => {
+      // Ignore if user is currently typing in an input or textarea
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
 
-  const [rowData] = useState([
-    {
-      slNo: '1',
-      channelName: 'Aman Gupta',
-      channelLink: 'instagram.com/aman',
-      platform: 'Instagram',
-      brandKey: 'BRD-4589',
-      productName: 'Wireless Earbuds X1',
-      deliverables: '1 Reel + 2 Stories',
-      brandPriceComplete: '₹50,000',
-      deliverablesCount: '3',
-      requiredPricePer: '₹16,666',
-      projectManager: 'Rahul Sharma',
-      pmComment: 'Awaiting content script approval',
-      pmStatus: 'IN PROGRESS',
-      influencerAssociate: 'Priya Patel',
-      channelPricePer: '₹15,000',
-      iaStatus: 'CONTACTED',
-      iaComment: 'Sent initial brief via email',
-      postingDate: '25th Oct 2026'
-    },
-    {
-      slNo: '2',
-      channelName: 'Nisha Verma',
-      channelLink: 'youtube.com/nisha',
-      platform: 'YouTube',
-      brandKey: 'BRD-4590',
-      productName: 'Gaming Laptop Pro',
-      deliverables: 'Dedicated Video 10m',
-      brandPriceComplete: '₹1,20,000',
-      deliverablesCount: '1',
-      requiredPricePer: '₹1,20,000',
-      projectManager: 'Vikram Singh',
-      pmComment: 'Video draft received. Reviewing.',
-      pmStatus: 'PENDING',
-      influencerAssociate: 'Amit Kumar',
-      channelPricePer: '₹1,00,000',
-      iaStatus: 'APPROVED',
-      iaComment: 'Creator requested advance payment',
-      postingDate: '30th Oct 2026'
-    },
-    {
-      slNo: '3',
-      channelName: 'Neha Kakoti',
-      channelLink: 'instagram.com/nehaK',
-      platform: 'Instagram',
-      brandKey: 'BRD-4591',
-      productName: 'Fitness Tracker Plus',
-      deliverables: 'Static Post + Story',
-      brandPriceComplete: '₹25,000',
-      deliverablesCount: '2',
-      requiredPricePer: '₹12,500',
-      projectManager: 'Sonia Das',
-      pmComment: 'All set for posting',
-      pmStatus: 'COMPLETED',
-      influencerAssociate: 'Rahul Sharma',
-      channelPricePer: '₹10,000',
-      iaStatus: 'APPROVED',
-      iaComment: 'Link shared by creator',
-      postingDate: '15th Oct 2026'
-    }
-  ]);
+      const clipboardData = e.clipboardData || window.clipboardData;
+      const pastedText = clipboardData.getData('text');
 
-  const displayData = activeTab === 'database' ? rowData : analyticsData;
+      if (!pastedText) return;
+
+      try {
+        const rows = pastedText.split('\n').filter(row => row.trim() !== '');
+        if (rows.length === 0) return;
+
+        if (rows.length > 50) {
+          showToast(`Maximum 50 rows are allowed per paste. You pasted ${rows.length}.`, 'error');
+          return;
+        }
+
+        // Clean numbers in case they paste "₹50,000" or just plain strings
+        const parseNum = (val) => {
+          if (!val) return 0;
+          const cleaned = val.toString().replace(/[^0-9.-]+/g, "");
+          return parseFloat(cleaned) || 0;
+        };
+
+        // Parse tab-separated values exactly as they copy from their standard 18-column Excel sheet
+        const newRecords = rows.map((row, index) => {
+          const columns = row.split('\t');
+
+          // Helper to grab cell text safely as an empty string instead of fake placeholders
+          const getStr = (idx) => (columns[idx] !== undefined && columns[idx].trim() !== '') ? columns[idx].trim() : '';
+
+          return {
+            channelCode: getStr(0),
+            channelName: getStr(1),
+            channelLink: getStr(2),
+            platform: getStr(3),
+            brandUniqueKey: getStr(4),
+            productName: getStr(5),
+            deliverables: getStr(6),
+            brandPrice: parseNum(columns[7]),
+            deliverablesCount: parseNum(columns[8]),
+            requiredPrice: parseNum(columns[9]),
+            projectManager: getStr(10),
+            projectManagerComment: getStr(11),
+            projectManagerStatus: getStr(12),
+            influencerAssociate: getStr(13),
+            channelPrice: parseNum(columns[14]),
+            iaStatus: getStr(15),
+            iaComment: getStr(16),
+            postingDate: getStr(17)
+          };
+        });
+
+        if (newRecords.length > 0) {
+          setPastedState({ records: newRecords, tab: activeTab });
+          if (activeTab === 'database') {
+            setRowData(prev => [...newRecords, ...prev]);
+          } else {
+            setAnalyticsData(prev => [...newRecords, ...prev]);
+          }
+          showToast(`Pasted ${newRecords.length} records. Please save to confirm!`, 'success');
+          console.log("📥 Appended from Clipboard:", newRecords);
+        }
+      } catch (err) {
+        showToast('Error pasting data from clipboard', 'error');
+      }
+    };
+
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => window.removeEventListener('paste', handleGlobalPaste);
+  }, [activeTab]);
+
+  const [analyticsData, setAnalyticsData] = useState([]);
+  const [rowData, setRowData] = useState([]);
+  const [tableColumns, setTableColumns] = useState([]);
+
+  const [editingRowIndex, setEditingRowIndex] = useState(null);
+  const [editFormData, setEditFormData] = useState(null);
+
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
+
+  const getRowId = (row, idx) => row.id || row.tempId || idx;
+
+  const toggleRowSelection = (row, idx) => {
+    const uniqueId = getRowId(row, idx);
+    setSelectedRowIds(prev =>
+      prev.includes(uniqueId) ? prev.filter(id => id !== uniqueId) : [...prev, uniqueId]
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedRowIds(displayData.map((row, idx) => getRowId(row, idx)));
+    } else {
+      setSelectedRowIds([]);
+    }
+  };
+
+  const handleEditSelected = () => {
+    if (selectedRowIds.length !== 1) {
+      showToast("Please select exactly 1 record to edit inline.", "error");
+      return;
+    }
+    const targetId = selectedRowIds[0];
+    const targetIndex = displayData.findIndex((row, idx) => getRowId(row, idx) === targetId);
+    if (targetIndex !== -1) {
+      handleDoubleClickRow(displayData[targetIndex], targetIndex);
+    }
+  };
+
+  const handleDoubleClickRow = (row, index) => {
+    setEditingRowIndex(index);
+    setEditFormData({ ...row }); // clone the row to start editing
+  };
+
+  const handleAddNewRecord = () => {
+    const newRecord = {
+      channelCode: '',
+      channelName: '',
+      channelLink: '',
+      platform: '',
+      brandUniqueKey: '',
+      productName: '',
+      deliverables: '',
+      brandPrice: '',
+      deliverablesCount: '',
+      requiredPrice: '',
+      projectManager: '',
+      projectManagerComment: '',
+      projectManagerStatus: '',
+      influencerAssociate: '',
+      channelPrice: '',
+      iaStatus: '',
+      iaComment: '',
+      postingDate: '',
+      isNewUnsaved: true
+    };
+
+    if (activeTab === 'database') {
+      setRowData(prev => [newRecord, ...prev]);
+    } else {
+      setAnalyticsData(prev => [newRecord, ...prev]);
+    }
+
+    // Auto-focus the exact new row in Inline Editing Mode simultaneously
+    setEditingRowIndex(0);
+    setEditFormData({ ...newRecord });
+  };
+
+  const handleEditChange = (col, value) => {
+    setEditFormData(prev => ({ ...prev, [col]: value }));
+  };
+
+  const handleSaveInlineEdit = async () => {
+    try {
+      showToast("Saving changes...", "success");
+      const token = localStorage.getItem('token');
+      // HTML Inputs convert everything to strings. We must cast these back to strict numbers for Java!
+      const finalPayload = { ...editFormData };
+      finalPayload.brandPrice = parseFloat(finalPayload.brandPrice) || 0;
+      finalPayload.requiredPrice = parseFloat(finalPayload.requiredPrice) || 0;
+      finalPayload.channelPrice = parseFloat(finalPayload.channelPrice) || 0;
+      finalPayload.deliverablesCount = parseInt(finalPayload.deliverablesCount, 10) || 1;
+
+      if (finalPayload.isNewUnsaved) {
+        delete finalPayload.isNewUnsaved;
+        delete finalPayload.tempId;
+
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/channels/bulk`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ records: [finalPayload] })
+        });
+
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          navigate('/login', { replace: true });
+          return;
+        }
+        if (!response.ok) throw new Error("Failed to create record");
+
+        if (activeTab === 'database') {
+          const newData = [...rowData];
+          newData[editingRowIndex] = finalPayload;
+          setRowData(newData);
+        } else {
+          const newData = [...analyticsData];
+          newData[editingRowIndex] = finalPayload;
+          setAnalyticsData(newData);
+        }
+        setEditingRowIndex(null);
+        setEditFormData(null);
+        showToast("Record created successfully!", "success");
+        return;
+      }
+
+      const id = finalPayload.id;
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/channels/${id}`, {
+        method: 'PUT', // or PUT, verify with backend if 404 occurs
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(finalPayload)
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login', { replace: true });
+        return;
+      }
+      if (!response.ok) throw new Error("Failed to save record");
+
+      // Update local UI immediately
+      if (activeTab === 'database') {
+        const newData = [...rowData];
+        newData[editingRowIndex] = editFormData;
+        setRowData(newData);
+      } else {
+        const newData = [...analyticsData];
+        newData[editingRowIndex] = editFormData;
+        setAnalyticsData(newData);
+      }
+
+      setEditingRowIndex(null);
+      setEditFormData(null);
+      showToast("Record updated successfully!", "success");
+    } catch (err) {
+      showToast("Error updating record", "error");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (editFormData && editFormData.isNewUnsaved) {
+      if (activeTab === 'database') {
+        const newData = [...rowData];
+        newData.splice(editingRowIndex, 1);
+        setRowData(newData);
+      } else {
+        const newData = [...analyticsData];
+        newData.splice(editingRowIndex, 1);
+        setAnalyticsData(newData);
+      }
+    }
+    setEditingRowIndex(null);
+    setEditFormData(null);
+  };
+  // ----------------------------------------
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+
+        // Determine correct endpoint based on active tab
+        const endpoint = activeTab === 'database' ? '/channels/getAll' : '/dashboard/data';
+
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.status === 401) {
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
+        }
+        if (res.ok) {
+          const rawText = await res.text();
+          try {
+            const data = JSON.parse(rawText);
+            if (data && data.length > 0) {
+              setRowData(data);
+              setTableColumns(Object.keys(data[0]));
+            } else {
+              setRowData([]);
+              setTableColumns([]);
+            }
+          } catch (parseError) {
+            console.error("Backend sent invalid JSON! Raw string:", rawText);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch API data", err);
+      }
+    };
+    fetchData();
+  }, [activeTab, navigate]);
+
+  // Use rowData for both tabs now since we update it based on activeTab
+  const displayData = rowData;
+
+  const renderCell = (col, value, row) => {
+    switch (col) {
+      case 'platform':
+        return <TypeBadge value={value || ''} />;
+      case 'projectManagerStatus':
+      case 'iaStatus':
+        return <StatusBadge value={value || ''} />;
+      case 'channelLink':
+        return (
+          <div className="flex items-center justify-center gap-1.5 text-brand-400 hover:text-brand-300 hover:underline cursor-pointer">
+            {row.platform === 'Instagram' ? <Instagram size={14} className="text-pink-500 shrink-0" /> : <Youtube size={14} className="text-red-500 shrink-0" />}
+            {value}
+          </div>
+        );
+      case 'brandPrice':
+        return <span className="font-bold text-brand-accent whitespace-nowrap">{value}</span>;
+      case 'requiredPrice':
+        return <span className="font-bold text-brand-500 whitespace-nowrap">{value}</span>;
+      case 'channelPrice':
+        return <span className="font-bold text-gray-200 whitespace-nowrap">{value}</span>;
+      case 'brandUniqueKey':
+      case 'channelCode':
+        return <span className="font-mono text-gray-400">{value}</span>;
+      case 'channelName':
+        return <span className="font-bold text-white whitespace-nowrap"><ExpandableText text={value} /></span>;
+      case 'projectManagerComment':
+      case 'iaComment':
+        return <ExpandableText text={value} />;
+      case 'postingDate':
+        return <span className="whitespace-nowrap text-brand-100 font-medium">{value}</span>;
+      default:
+        return <ExpandableText text={value} />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0F1014] relative overflow-hidden flex flex-col text-sm text-gray-300">
-      
+
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
@@ -252,11 +560,10 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: -20, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: -20, x: '-50%' }}
-            className={`fixed top-6 left-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border shadow-xl backdrop-blur-md ${
-              toast.type === 'error' 
-                ? 'bg-red-500/10 border-red-500/30 text-red-200' 
-                : 'bg-brand-500/10 border-brand-500/30 text-brand-100'
-            }`}
+            className={`fixed top-6 left-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border shadow-xl backdrop-blur-md ${toast.type === 'error'
+              ? 'bg-red-500/10 border-red-500/30 text-red-200'
+              : 'bg-brand-500/10 border-brand-500/30 text-brand-100'
+              }`}
           >
             {toast.type === 'error' ? (
               <AlertCircle size={18} className="text-red-500" />
@@ -271,6 +578,35 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
 
+      {/* Undo/Save Toolbar for Pasted Records */}
+      <AnimatePresence>
+        {pastedState && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 50, x: '-50%' }}
+            className="fixed bottom-10 left-1/2 z-50 flex items-center gap-4 px-5 py-3 rounded-xl border border-brand-500/30 bg-black/60 shadow-2xl backdrop-blur-xl"
+          >
+            <span className="font-semibold text-white">
+              {pastedState.records.length} Unsaved Records
+            </span>
+            <div className="w-px h-6 bg-white/20 mx-1"></div>
+            <button
+              onClick={handleSavePasted}
+              className="flex items-center gap-1.5 bg-brand-500 hover:bg-brand-400 text-brand-900 px-4 py-1.5 rounded-md font-bold transition-all shadow-lg"
+            >
+              <Save size={16} /> Save to Database
+            </button>
+            <button
+              onClick={handleUndoPaste}
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-gray-200 px-4 py-1.5 rounded-md font-medium transition-all"
+            >
+              <Undo2 size={16} /> Undo Paste
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Liquid Glass Background Orbs */}
       <div className="absolute top-[-10vw] left-[-10vw] w-[40vw] h-[40vw] bg-brand-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none" />
       <div className="absolute bottom-[-10vw] right-[-5vw] w-[35vw] h-[35vw] bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
@@ -280,7 +616,7 @@ const Dashboard = () => {
       <header className="glass border-b border-white/5 shadow-md relative z-10">
         <div className="max-w-[1600px] mx-auto px-4">
           <div className="flex items-center gap-8 h-14">
-            
+
             {/* Logo area */}
             <div className="flex items-center gap-2 pr-6 border-r border-white/5">
               <div className="w-6 h-6 rounded-md bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
@@ -292,13 +628,13 @@ const Dashboard = () => {
             {/* Tab and Actions */}
             <div className="flex flex-1 items-center justify-between h-full">
               <nav className="flex items-center h-full gap-1 pl-4">
-                <button 
+                <button
                   onClick={() => setActiveTab('database')}
                   className={`px-4 h-full transition-colors flex items-center gap-2 text-sm font-medium border-b-2 ${activeTab === 'database' ? 'text-brand-400 border-brand-500 bg-brand-500/5' : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'}`}
                 >
                   Manage Database
                 </button>
-                <button 
+                <button
                   onClick={() => setActiveTab('analytics')}
                   className={`px-4 h-full transition-colors flex items-center gap-2 text-sm font-medium border-b-2 ${activeTab === 'analytics' ? 'text-brand-400 border-brand-500 bg-brand-500/5' : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'}`}
                 >
@@ -306,8 +642,8 @@ const Dashboard = () => {
                 </button>
               </nav>
 
-              <button 
-                onClick={() => navigate('/')}
+              <button
+                onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
                 className="flex items-center gap-2 px-4 py-1.5 rounded-full text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors text-sm font-medium border border-transparent hover:border-red-500/20"
               >
                 <LogOut size={16} /> Logout
@@ -319,37 +655,37 @@ const Dashboard = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 md:p-6 max-w-[1600px] w-full mx-auto flex flex-col gap-5 relative z-10">
-        
+
         {/* Action Toolbar */}
         <motion.div initial={{ y: 0, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="glass-card p-2.5 flex flex-wrap items-center justify-between gap-4 border border-white/10">
           <div className="flex flex-wrap items-center gap-2.5 text-[13px]">
-            <button className="flex items-center gap-1.5 bg-brand-500 hover:bg-brand-accent text-brand-900 px-3 py-1.5 rounded-md font-bold transition-all shadow-lg shadow-brand-500/20">
+            <button onClick={handleAddNewRecord} className="flex items-center gap-1.5 bg-brand-500 hover:bg-brand-accent text-brand-900 px-3 py-1.5 rounded-md font-bold transition-all shadow-lg shadow-brand-500/20">
               <Plus size={14} /> Add New Record
             </button>
             <label className={`flex items-center gap-1.5 border px-3 py-1.5 rounded-md font-bold transition-all ${isUploading ? 'opacity-50 cursor-not-allowed bg-brand-500/10 text-brand-400/50 border-brand-500/10' : 'bg-brand-500/20 hover:bg-brand-500/30 text-brand-400 border-brand-500/30 cursor-pointer'}`}>
-              {isUploading ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} />} 
+              {isUploading ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} />}
               {isUploading ? 'Uploading...' : 'Upload CSV'}
               <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
             </label>
-            <button className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-3 py-1.5 rounded-md font-medium transition-all">
+            <button onClick={handleEditSelected} className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-3 py-1.5 rounded-md font-medium transition-all">
               <Edit size={14} /> Edit Selected
             </button>
             <button className="flex items-center gap-1.5 bg-red-500/20 hover:bg-red-500/40 text-red-500 border border-red-500/30 px-3 py-1.5 rounded-md font-medium transition-all">
               <Trash2 size={14} /> Delete Selected
             </button>
-            
+
             <div className="h-5 w-px bg-white/10 mx-1 hidden sm:block"></div>
 
-            <button className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-3 py-1.5 rounded-md transition-all">
+            {/* <button className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-3 py-1.5 rounded-md transition-all">
               <RefreshCw size={14} /> Refresh
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" className="ml-1 opacity-50"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" className="ml-1 opacity-50"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button> */}
 
             <div className="relative ml-2 text-gray-400 bg-white/5 rounded-md border border-white/10 flex items-center hover:border-white/20 transition-colors">
               <Search className="absolute left-2.5" size={14} />
-              <input 
-                type="text" 
-                placeholder="Search..." 
+              <input
+                type="text"
+                placeholder="Search..."
                 className="bg-transparent text-white text-[13px] pl-8 pr-3 py-1.5 focus:outline-none w-48"
               />
             </div>
@@ -366,7 +702,7 @@ const Dashboard = () => {
         </motion.div>
 
         {/* CUSTOM NATIVE TABLE */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -380,11 +716,11 @@ const Dashboard = () => {
                 <span>Filter By:</span>
                 <div className="flex items-center gap-1 bg-black/30 border border-white/10 rounded px-2 py-0.5 cursor-pointer hover:border-white/20">
                   <span className="text-gray-200">All</span>
-                  <svg width="8" height="5" viewBox="0 0 10 6" fill="none" className="ml-1 opacity-70"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="8" height="5" viewBox="0 0 10 6" fill="none" className="ml-1 opacity-70"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </div>
               </div>
             </div>
-            
+
             <div className="text-gray-400 font-medium">
               Showing 1 to 10 of 1,234 entries
             </div>
@@ -406,56 +742,65 @@ const Dashboard = () => {
             <table className="w-full text-center border-collapse min-w-[3200px]">
               <thead className="bg-black/40 text-[12px] font-semibold text-gray-300 sticky top-0 z-10 border-b border-brand-500/20 backdrop-blur-xl">
                 <tr>
-                  <th className="py-3 px-4 font-semibold text-center w-[50px]"><div className="flex justify-center"><Checkbox checked={false} /></div></th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">SL. NO</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">CHANNEL NAME</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">CHANNEL LINK</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">PLATFORM</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">BRAND UNIQUE KEY</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">PRODUCT NAME</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider min-w-[200px] text-center">DELIVERABLES</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">BRANDPRICE/COMPLETE DELIVERABLES</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">DELIVERABLES COUNT</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">REQUIRED PRICE PER DELIVERABLES</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">PROJECT MANAGER</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider min-w-[250px] text-center">PROJECT MANAGER COMMENT</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">PROJECT MANAGER STATUS</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">INFLUENCER ASSOCIATE</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">CHANNEL PRICE/DELIVERABLES</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">IA STATUS</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider min-w-[250px] text-center">INFLUENCER ASSOCIATE COMMENT</th>
-                  <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">POSTING DATE</th>
+                  <th className="py-3 px-4 font-semibold text-center w-[50px]"><div className="flex justify-center"><Checkbox checked={displayData.length > 0 && selectedRowIds.length === displayData.length} onChange={handleSelectAll} /></div></th>
+                  {tableColumns.map((col, idx) => (
+                    <th key={idx} className="py-3 px-4 font-semibold uppercase tracking-wider text-center">
+                      {col}
+                    </th>
+                  ))}
+                  {tableColumns.length === 0 && (
+                    <th className="py-3 px-4 font-semibold uppercase tracking-wider text-center">NO DATA</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="text-[13px] text-gray-200">
-                {displayData.map((row, idx) => (
-                  <tr key={idx} className="border-b border-white/5 hover:bg-white/[0.04] transition-colors group">
-                    <td className="py-3 px-4 text-center border-r border-white/5"><div className="flex justify-center"><Checkbox checked={row.slNo === '1'} /></div></td>
-                    <td className="py-3 px-4 text-gray-400 font-mono text-center">{row.slNo}</td>
-                    <td className="py-3 px-4 font-bold text-white whitespace-nowrap text-center">{row.channelName}</td>
-                    <td className="py-3 px-4 text-brand-400 hover:text-brand-300 hover:underline cursor-pointer whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        {row.platform === 'Instagram' ? <Instagram size={14} className="text-pink-500 shrink-0" /> : <Youtube size={14} className="text-red-500 shrink-0" />}
-                        {row.channelLink}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center"><TypeBadge value={row.platform} /></td>
-                    <td className="py-3 px-4 font-mono text-gray-400 text-center">{row.brandKey}</td>
-                    <td className="py-3 px-4 text-gray-200 text-center">{row.productName}</td>
-                    <td className="py-3 px-4 text-brand-400 font-medium whitespace-nowrap text-center">{row.deliverables}</td>
-                    <td className="py-3 px-4 font-bold text-brand-accent whitespace-nowrap text-center">{row.brandPriceComplete}</td>
-                    <td className="py-3 px-4 text-center text-gray-300 text-center">{row.deliverablesCount}</td>
-                    <td className="py-3 px-4 font-bold text-brand-500 whitespace-nowrap text-center">{row.requiredPricePer}</td>
-                    <td className="py-3 px-4 whitespace-nowrap text-white text-center">{row.projectManager}</td>
-                    <td className="py-3 px-4 text-gray-400 text-center" title={row.pmComment}><span className="line-clamp-1 mx-auto max-w-[200px]">{row.pmComment}</span></td>
-                    <td className="py-3 px-4 text-center"><StatusBadge value={row.pmStatus} /></td>
-                    <td className="py-3 px-4 whitespace-nowrap text-white text-center">{row.influencerAssociate}</td>
-                    <td className="py-3 px-4 font-bold text-gray-200 whitespace-nowrap text-center">{row.channelPricePer}</td>
-                    <td className="py-3 px-4 text-center"><StatusBadge value={row.iaStatus} /></td>
-                    <td className="py-3 px-4 text-gray-400 text-center" title={row.iaComment}><span className="line-clamp-1 mx-auto max-w-[200px]">{row.iaComment}</span></td>
-                    <td className="py-3 px-4 whitespace-nowrap text-brand-100 font-medium text-center">{row.postingDate}</td>
-                  </tr>
-                ))}
+                {displayData.map((row, idx) => {
+                  const isEditing = editingRowIndex === idx;
+                  return (
+                    <tr
+                      key={idx}
+                      onDoubleClick={() => !isEditing && handleDoubleClickRow(row, idx)}
+                      className={`border-b border-white/5 transition-colors group ${isEditing ? 'bg-brand-500/10' : 'hover:bg-white/[0.04]'}`}
+                    >
+                      <td className="py-3 px-4 text-center border-r border-white/5 relative">
+                        {isEditing ? (
+                          <div className="flex justify-center items-center gap-2">
+                            <button onClick={handleSaveInlineEdit} className="text-green-400 hover:text-green-300 bg-green-500/10 p-1.5 rounded transition-all" title="Save">
+                              <Save size={14} />
+                            </button>
+                            <button onClick={handleCancelEdit} className="text-red-400 hover:text-red-300 bg-red-500/10 p-1.5 rounded transition-all" title="Cancel">
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-center"><Checkbox checked={selectedRowIds.includes(getRowId(row, idx))} onChange={() => toggleRowSelection(row, idx)} /></div>
+                        )}
+                      </td>
+                      {tableColumns.map((col, colIdx) => (
+                        <td key={colIdx} className={`px-3 text-center ${isEditing ? 'py-2' : 'py-3'}`}>
+                          {isEditing ? (
+                            col === 'id' ? (
+                              <span className="text-gray-500 font-mono text-[12px]">{editFormData[col] || 'N/A'}</span>
+                            ) : (
+                              <input
+                                type="text"
+                                value={editFormData[col] || ''}
+                                onChange={(e) => handleEditChange(col, e.target.value)}
+                                className="bg-black/50 border border-brand-500/40 rounded px-2 py-1.5 text-white text-[13px] w-full min-w-[120px] focus:outline-none focus:border-brand-500 focus:bg-white/5 transition-all text-center placeholder-gray-600"
+                                placeholder={`Enter ${col}`}
+                              />
+                            )
+                          ) : renderCell(col, row[col], row)}
+                        </td>
+                      ))}
+                      {tableColumns.length === 0 && (
+                        <td className="py-3 px-4 text-center text-gray-500 py-10">
+                          No columns found from API
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -464,10 +809,10 @@ const Dashboard = () => {
           <div className="flex items-center justify-between px-4 py-2.5 bg-black/20 border-t border-white/10 text-[12px] text-gray-300 backdrop-blur-md">
             <div className="flex items-center gap-2">
               <DatabaseZap size={14} className="text-brand-500" />
-              <span className="font-semibold text-brand-500">Connected:</span> 
+              <span className="font-semibold text-brand-500">Connected:</span>
               Real-time sync with <span className="text-white font-medium">PostgreSQL</span>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
                 <button className="px-2 py-1 rounded hover:text-white hover:bg-white/10 transition-colors">First</button>
@@ -476,9 +821,9 @@ const Dashboard = () => {
                 <button className="px-2 py-1 rounded hover:text-white hover:bg-white/10 transition-colors">Next</button>
                 <button className="px-2 py-1 rounded hover:text-white hover:bg-white/10 transition-colors">Last</button>
               </div>
-              
+
               <div className="w-px h-4 bg-white/10"></div>
-              
+
               <div className="flex items-center gap-2">
                 <span>Page 1 of 1234</span>
                 <div className="flex items-center gap-1 bg-black/30 border border-white/10 rounded overflow-hidden">
@@ -489,7 +834,7 @@ const Dashboard = () => {
             </div>
           </div>
         </motion.div>
-        
+
       </main>
     </div>
   );
