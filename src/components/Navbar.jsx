@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu, X, LayoutDashboard } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/enmmey-logo.png';
 
 export default function Navbar() {
+    const navigate = useNavigate();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+
+    useEffect(() => {
+        const checkAuth = () => setIsLoggedIn(!!localStorage.getItem('token'));
+        window.addEventListener('storage', checkAuth);
+        return () => window.removeEventListener('storage', checkAuth);
+    }, []);
 
     const scrollTo = (id) => {
         setIsMobileMenuOpen(false);
@@ -66,11 +74,20 @@ export default function Navbar() {
 
                 {/* Action Button */}
                 <div className="hidden md:flex items-center gap-4">
-                    <Link to="/login">
-                        <button className="bg-brand-500 hover:bg-brand-accent text-brand-900 px-6 py-2.5 rounded-full font-bold transition-all duration-300 hover:shadow-[0_0_20px_rgba(196,214,0,0.4)]">
-                            Login
+                    {isLoggedIn ? (
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            className="flex items-center gap-2 bg-brand-500 hover:bg-brand-accent text-brand-900 px-6 py-2.5 rounded-full font-bold transition-all duration-300 hover:shadow-[0_0_20px_rgba(196,214,0,0.4)]"
+                        >
+                            <LayoutDashboard size={16} /> Dashboard
                         </button>
-                    </Link>
+                    ) : (
+                        <Link to="/login">
+                            <button className="bg-brand-500 hover:bg-brand-accent text-brand-900 px-6 py-2.5 rounded-full font-bold transition-all duration-300 hover:shadow-[0_0_20px_rgba(196,214,0,0.4)]">
+                                Login
+                            </button>
+                        </Link>
+                    )}
                 </div>
 
                 {/* Mobile menu button */}
@@ -107,11 +124,20 @@ export default function Navbar() {
                                     {label}
                                 </button>
                             ))}
-                            <Link to="/login">
-                                <button className="bg-brand-500 text-white px-6 py-3 rounded-xl font-medium mt-2 w-full">
-                                    Login
+                            {isLoggedIn ? (
+                                <button
+                                    onClick={() => { setIsMobileMenuOpen(false); navigate('/dashboard'); }}
+                                    className="flex items-center justify-center gap-2 bg-brand-500 text-brand-900 px-6 py-3 rounded-xl font-bold mt-2 w-full"
+                                >
+                                    <LayoutDashboard size={16} /> Dashboard
                                 </button>
-                            </Link>
+                            ) : (
+                                <Link to="/login">
+                                    <button className="bg-brand-500 text-white px-6 py-3 rounded-xl font-medium mt-2 w-full">
+                                        Login
+                                    </button>
+                                </Link>
+                            )}
                         </div>
                     </motion.div>
                 )
