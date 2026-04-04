@@ -1,0 +1,14 @@
+Options -MultiViews
+RewriteEngine On
+RewriteBase /
+
+# Correct MIME types so browsers accept JS modules
+AddType application/javascript .js .mjs
+AddType text/css .css
+
+# Don't rewrite real files or directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Route everything else to index.html (React Router)
+RewriteRule ^ index.html [L]

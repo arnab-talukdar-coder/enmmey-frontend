@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Instagram, Youtube, Database, Plus, Edit, Trash2,
   RefreshCw, Search, LayoutDashboard, Share2, Activity,
-  DatabaseZap, Filter, ChevronLeft, ChevronRight, LogOut, Upload, AlertCircle, CheckCircle, X, Save, Undo2, Home
+  DatabaseZap, Filter, ChevronLeft, ChevronRight, LogOut, Upload, AlertCircle, CheckCircle, X, Save, Undo2, Home, Check
 } from 'lucide-react';
 
 const TypeBadge = ({ value }) => {
@@ -34,8 +34,25 @@ const GenderBadge = ({ value }) => {
   );
 };
 
+const STATUS_OPTIONS = [
+  { value: '', label: '— Select Status —' },
+  { value: 'Go Ahead', label: 'Go Ahead' },
+  { value: 'Confirmed', label: 'Confirmed' },
+  { value: 'Under Negotiation', label: 'Under Negotiation' },
+  { value: 'Working', label: 'Working' },
+  { value: 'Posted', label: 'Posted' },
+  { value: 'Cancel', label: 'Cancel' },
+];
+
 const StatusBadge = ({ value }) => {
   let bg = 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  if (value === 'Go Ahead') bg = 'bg-green-400/20 text-green-300 border-green-400/30';
+  if (value === 'Confirmed') bg = 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25';
+  if (value === 'Under Negotiation') bg = 'bg-amber-500/15 text-amber-300 border-amber-500/25';
+  if (value === 'Working') bg = 'bg-gray-400/15 text-gray-300 border-gray-400/25';
+  if (value === 'Posted') bg = 'bg-emerald-600/20 text-emerald-300 border-emerald-600/30';
+  if (value === 'Cancel') bg = 'bg-red-500/20 text-red-300 border-red-500/30';
+  // Legacy API values
   if (value === 'APPROVED' || value === 'COMPLETED') bg = 'bg-green-500/20 text-green-400 border-green-500/30';
   if (value === 'IN PROGRESS') bg = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
   if (value === 'PENDING' || value === 'CONTACTED') bg = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
@@ -61,26 +78,453 @@ const Checkbox = ({ checked, onChange }) => (
   </div>
 );
 
-const ExpandableText = ({ text }) => {
-  const [expanded, setExpanded] = useState(false);
-  const isLong = typeof text === 'string' && text.length > 25;
-
-  if (!isLong) return <span>{text}</span>;
+const HoverText = ({ text, children, className = "", maxWidth = "max-w-[180px]" }) => {
+  const [hovered, setHovered] = useState(false);
+  const displayValue = text?.toString() || '';
+  const isLong = displayValue.length > 20;
 
   return (
-    <div className="flex flex-col items-center justify-center mx-auto max-w-[250px]">
-      <span className={expanded ? 'whitespace-normal break-words text-left block w-full' : 'line-clamp-1 w-full'}>{text}</span>
-      <button
-        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-        className="text-[10px] text-brand-500 font-bold hover:text-brand-400 mt-1 uppercase tracking-wider flex items-center gap-1"
-      >
-        {expanded ? '▲ Collapse' : '▼ Expand'}
-      </button>
+    <div
+      className={`relative flex items-center justify-center mx-auto w-full group/ht ${className}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {children ? children : (
+        <span className={`block text-center whitespace-nowrap overflow-hidden text-ellipsis px-1 ${maxWidth}`}>
+          {displayValue}
+        </span>
+      )}
+      <AnimatePresence>
+        {hovered && isLong && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 5 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 5 }}
+            className="absolute bottom-full mb-2 z-[200] w-max max-w-[350px] bg-[#15171C]/95 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl p-3 text-left whitespace-normal break-words pointer-events-auto select-text"
+          >
+            <p className="text-[12px] text-gray-200 leading-relaxed font-medium">
+              {displayValue}
+            </p>
+            <div className="absolute -bottom-1 left-1/2 -ml-1 w-2 h-2 bg-[#15171C] border-b border-r border-white/10 rotate-45" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
-// Fixed column order + display labels for the Analytics tab
+// ----- PM Status colour map -----
+const PM_STATUS_CHIP_STYLES = {
+  'Go Ahead': 'bg-green-400/20 text-green-300 border-green-400/30',
+  'Confirmed': 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25',
+  'Under Negotiation': 'bg-amber-500/15 text-amber-300 border-amber-500/25',
+  'Working': 'bg-gray-400/15 text-gray-300 border-gray-400/25',
+  'Posted': 'bg-emerald-600/20 text-emerald-300 border-emerald-600/30',
+  'Cancel': 'bg-red-500/20 text-red-300 border-red-500/30',
+};
+const PM_STATUS_LIST = ['Go Ahead', 'Confirmed', 'Under Negotiation', 'Working', 'Posted', 'Cancel'];
+
+// ----- IA Status colour map -----
+const IA_STATUS_CHIP_STYLES = {
+  'Assigned': 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
+  'Confirm': 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25',
+  'Posted': 'bg-emerald-600/20 text-emerald-300 border-emerald-600/30',
+  'Cancel': 'bg-red-500/20 text-red-300 border-red-500/30',
+  'Under Negotiation': 'bg-amber-500/15 text-amber-300 border-amber-500/25',
+};
+const IA_STATUS_LIST = ['Assigned', 'Confirm', 'Posted', 'Cancel', 'Under Negotiation'];
+
+const project_manager_LIST = ['Kritika', 'Ajay', 'Sayan', 'Arnab'];
+
+// Merged lookup used by StatusBadge
+const ALL_STATUS_CHIP_STYLES = { ...PM_STATUS_CHIP_STYLES, ...IA_STATUS_CHIP_STYLES };
+
+// ----- Platform / Brand / PM / IA Option Lists -----
+const PLATFORM_LIST = ['Instagram', 'YouTube', 'Facebook', 'LinkedIn', 'Twitter', 'TikTok'];
+const BRAND_KEY_LIST = ['BRAND_01', 'BRAND_02', 'BRAND_03', 'BRAND_04', 'BRAND_05'];
+const PM_LIST = ['Manager A', 'Manager B', 'Manager C'];
+const DELIVERABLE_CATEGORIES = ['Reels', 'Shorts', 'Posts', 'Stories', 'Videos', 'Static', 'Carousel'];
+
+const PLATFORM_CHIP_STYLES = {
+  'Instagram': 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+  'YouTube': 'bg-red-500/10 text-red-400 border-red-500/20',
+  'Facebook': 'bg-blue-600/10 text-blue-400 border-blue-600/20',
+  'LinkedIn': 'bg-blue-700/10 text-blue-400 border-blue-700/20'
+};
+
+/**
+ * Custom Excel/Sheets-style status picker.
+ * Accepts `options` (string[]) and `chipStyles` (object) props for per-column configuration.
+ * `onAdd` (function) is optional - adds searchable add-mode.
+ * `onBulkAdd` (function) is optional - adds integrated bulk-add interface.
+ */
+const QuickStatusDropdown = ({ value, onChange, options, chipStyles, onAdd, onBulkAdd }) => {
+  const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isAddingBulk, setIsAddingBulk] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const ref = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (open && inputRef.current) inputRef.current.focus();
+    if (!open) {
+      setSearchTerm('');
+      setIsAddingBulk(false);
+      setBulkText('');
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  const chipStyle = (chipStyles || ALL_STATUS_CHIP_STYLES)[value] || 'bg-gray-500/15 text-gray-400 border-gray-500/20';
+
+  return (
+    <div ref={ref} className="relative inline-flex flex-col items-center">
+      {/* Trigger */}
+      <div
+        className="flex items-center gap-1.5 cursor-pointer group/qd"
+        onClick={() => setOpen(v => !v)}
+        title="Click to change"
+      >
+        {value
+          ? (
+            <span className={`px-2.5 py-1 rounded text-[10px] uppercase font-bold tracking-wide border transition-all group-hover/qd:scale-105 ${chipStyle}`}>
+              {value}
+            </span>
+          ) : (
+            <span className="px-2.5 py-1 rounded text-[10px] uppercase font-bold tracking-wide border border-dashed border-white/20 text-gray-500 group-hover/qd:border-brand-500/40 group-hover/qd:text-gray-400 transition-all">
+              None
+            </span>
+          )
+        }
+      </div>
+
+      {/* Floating Panel */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute top-full mt-2 z-[100] min-w-[200px] bg-[#0F1014]/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-2xl overflow-hidden py-1"
+          >
+            {isAddingBulk ? (
+              <div className="p-3">
+                <div className="text-[10px] uppercase font-bold text-gray-500 mb-2 tracking-wider">Bulk Add Associates</div>
+                <textarea
+                  autoFocus
+                  placeholder="Type names here...&#10;(one per line)"
+                  value={bulkText}
+                  onChange={(e) => setBulkText(e.target.value)}
+                  className="w-full h-32 bg-white/5 border border-white/10 rounded-md p-2 text-[11px] text-white focus:outline-none focus:border-brand-500/50 transition-all placeholder-gray-600 resize-none mb-3 custom-scrollbar"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const names = bulkText.split('\n').map(n => n.trim()).filter(n => n !== '');
+                      if (names.length > 0) onBulkAdd(names);
+                      setOpen(false);
+                    }}
+                    disabled={!bulkText.trim()}
+                    className="flex-1 bg-brand-500 hover:bg-brand-accent disabled:opacity-50 disabled:bg-brand-500/10 text-brand-900 py-1.5 rounded text-[11px] font-bold transition-all"
+                  >
+                    Save All
+                  </button>
+                  <button
+                    onClick={() => setIsAddingBulk(false)}
+                    className="flex-1 bg-white/5 hover:bg-white/10 text-white py-1.5 rounded text-[11px] font-bold transition-all border border-white/10"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Search Input */}
+                {onAdd && (
+                  <div className="px-2 py-1.5 border-b border-white/5 mb-1 group/search relative">
+                    <Search size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within/search:text-brand-400 transition-colors" />
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      placeholder="Search/Type Name..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && searchTerm.trim()) {
+                          const exists = options.find(o => o.toLowerCase() === searchTerm.trim().toLowerCase());
+                          if (!exists) {
+                            onAdd(searchTerm.trim());
+                            setOpen(false);
+                          }
+                        }
+                      }}
+                      className="w-full bg-white/5 border border-white/10 rounded-md pl-8 pr-2 py-1 text-[11px] text-white focus:outline-none focus:border-brand-500/50 transition-all placeholder-gray-600"
+                    />
+                  </div>
+                )}
+
+                <div className="max-h-[220px] overflow-y-auto custom-scrollbar">
+                  {options
+                    .filter(opt => !searchTerm || opt.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map(opt => {
+                      const isSelected = value === opt;
+                      const style = (chipStyles || ALL_STATUS_CHIP_STYLES)[opt] || 'bg-gray-500/15 text-gray-400 border-gray-500/20';
+                      return (
+                        <button
+                          key={opt}
+                          onClick={() => { onChange(opt); setOpen(false); }}
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 transition-colors ${isSelected ? 'bg-white/5' : 'hover:bg-white/[0.04]'}`}
+                        >
+                          <span className={`flex-1 text-center px-2.5 py-1 rounded text-[10px] uppercase font-bold tracking-wide border ${style}`}>
+                            {opt}
+                          </span>
+                        </button>
+                      );
+                    })}
+
+                  {/* Add New Shortcut for search term */}
+                  {onAdd && searchTerm && !options.some(o => o.toLowerCase() === searchTerm.toLowerCase()) && (
+                    <>
+                      <div className="h-px bg-white/10 my-1 mx-2" />
+                      <button
+                        onClick={() => { onAdd(searchTerm.trim()); setOpen(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-brand-400 hover:text-brand-300 hover:bg-white/[0.04] transition-colors"
+                      >
+                        <Plus size={14} className="ml-1" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">Add "{searchTerm}"...</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {!searchTerm && onBulkAdd && (
+                  <>
+                    <div className="h-px bg-white/10 my-1 mx-2" />
+                    <button
+                      onClick={() => setIsAddingBulk(true)}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-brand-400 hover:text-brand-300 hover:bg-white/[0.04] transition-colors"
+                    >
+                      <Plus size={14} className="ml-1" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">Bulk Add...</span>
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+/**
+ * Refined Deliverables Paster as requested.
+ * Shows a list of added items 1-by-1 with removal options.
+ */
+const DeliverablesPaster = ({ value = '', onChange }) => {
+  const [count, setCount] = useState(1);
+  const [category, setCategory] = useState(DELIVERABLE_CATEGORIES[0]);
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Helper to parse string back to list for display
+  const items = (value || '').split('+').map(i => i.trim()).filter(Boolean);
+
+  const handleAdd = () => {
+    const newItem = `${count} ${category}`;
+    const newValue = value ? `${value} + ${newItem}` : newItem;
+    onChange(newValue);
+  };
+
+  const removeItem = (idx) => {
+    const newList = items.filter((_, i) => i !== idx);
+    onChange(newList.join(' + '));
+  };
+
+  const handleClear = () => {
+    onChange('');
+  };
+
+  return (
+    <div ref={ref} className="relative inline-block w-full min-w-[200px]">
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-[#0d1108]/80 border border-brand-500/30 rounded px-2.5 py-2 min-h-[40px] text-[12px] text-brand-300 flex items-center justify-between cursor-pointer hover:border-brand-500/50 transition-all font-medium group overflow-hidden"
+      >
+        <span className="truncate pr-2">{value || <span className="text-gray-600 italic">Click to build deliverables...</span>}</span>
+        <Plus size={14} className="text-brand-500 shrink-0 group-hover:scale-110 transition-transform" />
+      </div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute top-full left-0 right-0 mt-2 z-[150] bg-[#121418] border border-white/10 rounded-xl shadow-2xl p-4 flex flex-col gap-4 min-w-[280px] backdrop-blur-xl"
+          >
+            {/* Current List Section */}
+            {items.length > 0 && (
+              <div className="flex flex-col gap-1.5 max-h-[120px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
+                <label className="text-[10px] uppercase font-bold text-gray-500 mb-0.5">Current List</label>
+                {items.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-white/5 border border-white/5 rounded-md px-2 py-1.5 group/item">
+                    <span className="text-[11px] text-brand-300 font-medium">{item}</span>
+                    <button 
+                      onClick={() => removeItem(idx)}
+                      className="text-gray-500 hover:text-red-400 p-0.5 transition-colors"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2 items-end">
+              <div className="w-16">
+                <label className="text-[10px] uppercase font-bold text-gray-500 mb-1 block">Count</label>
+                <input 
+                  type="number" 
+                  min="1"
+                  value={count}
+                  onChange={(e) => setCount(parseInt(e.target.value, 10) || 1)}
+                  className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-2 text-[11px] text-white focus:outline-none focus:border-brand-500/50 transition-all font-mono"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] uppercase font-bold text-gray-500 mb-1 block">Category</label>
+                <select 
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-2 text-[11px] text-white focus:outline-none focus:border-brand-500/50 transition-all font-medium appearance-none"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', paddingRight: '28px' }}
+                >
+                  {DELIVERABLE_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat} style={{ background: '#121418', color: '#fff' }}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button 
+                onClick={handleAdd}
+                className="flex-[2] bg-brand-500 hover:bg-brand-accent text-brand-900 py-2 rounded-lg flex items-center justify-center gap-2 transition-all font-bold text-[11px] uppercase shadow-lg shadow-brand-500/20"
+              >
+                <Plus size={14} strokeWidth={3} /> Add Item
+              </button>
+              <button 
+                onClick={handleClear}
+                className="flex-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 py-2 rounded-lg transition-all font-bold text-[11px] uppercase"
+              >
+                Clear
+              </button>
+            </div>
+
+            <div className="pt-2 border-t border-white/5 flex justify-end">
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="text-brand-500 hover:text-brand-400 text-[10px] font-bold uppercase transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ----- Custom Website Delete Alert (Modal) -----
+const ConfirmModal = ({ show, title, message, onConfirm, onCancel, confirmText = "Confirm", cancelText = "Cancel" }) => {
+  return (
+    <AnimatePresence>
+      {show && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onCancel}
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+          />
+          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-[#15171C] border border-white/10 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden pointer-events-auto"
+            >
+              <div className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                    <Trash2 className="text-red-500" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{title}</h3>
+                    <p className="text-gray-400 text-sm mt-1">{message}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 mt-8">
+                  <button
+                    onClick={onCancel}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-semibold transition-all border border-white/5"
+                  >
+                    {cancelText}
+                  </button>
+                  <button
+                    onClick={onConfirm}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 text-white font-bold transition-all shadow-lg shadow-red-500/20"
+                  >
+                    {confirmText}
+                  </button>
+                </div>
+              </div>
+              <div className="h-1 w-full bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
+
+const DATABASE_COLUMNS = [
+  { key: 'id', label: 'ID' },
+  { key: 'channelCode', label: 'Channel Code' },
+  { key: 'channelName', label: 'Channel Name' },
+  { key: 'channelLink', label: 'Channel Link' },
+  { key: 'platform', label: 'Platform' },
+  { key: 'brandUniqueKey', label: 'Brand Unique Key' },
+  { key: 'productName', label: 'Product Role/Name' },
+  { key: 'deliverables', label: 'Deliverables' },
+  { key: 'brandPrice', label: 'Brand Price' },
+  { key: 'deliverablesCount', label: 'Deliverables Count' },
+  { key: 'requiredPrice', label: 'Required Price' },
+  { key: 'projectManager', label: 'Project Manager' },
+  { key: 'projectManagerComment', label: 'PM Comment' },
+  { key: 'projectManagerStatus', label: 'PM Status' },
+  { key: 'influencerAssociate', label: 'Influencer Associate' },
+  { key: 'channelPrice', label: 'Channel Price' },
+  { key: 'iaStatus', label: 'IA Status' },
+  { key: 'iaComment', label: 'IA Comment' },
+  { key: 'postingDate', label: 'Posting Date' },
+  { key: 'createdAt', label: 'Created At' },
+  { key: 'updatedAt', label: 'Updated At' },
+];
+
 const ANALYTICS_COLUMNS = [
   { key: 'id', label: 'ID' },
   { key: 'channelCode', label: 'Channel Code' },
@@ -124,10 +568,90 @@ const Dashboard = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [toast, setToast] = useState(null);
   const [pastedState, setPastedState] = useState(null);
+  const [iaList, setIaList] = useState([]);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  const fetchIAs = async () => {
+    // try {
+    //   const token = localStorage.getItem('token');
+    //   const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/ia/getAll`, {
+    //     headers: { 'Authorization': `Bearer ${token}` }
+    //   });
+    //   if (res.ok) {
+    //     const data = await res.json();
+    //     const names = Array.isArray(data) ? data.map(item => typeof item === 'string' ? item : item.name) : [];
+    //     setIaList(names);
+    //   }
+    // } catch (err) {
+    //   console.error('Failed to fetch IAs', err);
+    // }
+    setIaList(['Associate X', 'Associate Y', 'Associate Z', 'Associate W']);
+  };
+
+  const handleAddIA = async (providedName) => {
+    const finalName = providedName?.trim();
+    if (!finalName) return null;
+    
+    // Optimistic local update
+    setIaList(prev => {
+      if (prev.includes(finalName)) return prev;
+      return [...prev, finalName];
+    });
+
+    try {
+      showToast(`Adding IA: ${finalName}...`, 'success');
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/ia/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name: finalName })
+      });
+      if (res.ok) {
+        showToast("IA added successfully!", "success");
+        fetchIAs();
+      }
+    } catch (err) {
+      console.error("API error adding IA", err);
+    }
+    return finalName;
+  };
+
+  const handleBulkAddIA = async (names) => {
+    if (!names || names.length === 0) return;
+    
+    // Filter out existing ones to avoid duplicates
+    const uniqueNew = names.filter(n => !iaList.includes(n));
+    if (uniqueNew.length === 0) return;
+
+    // Optimistic update
+    setIaList(prev => [...prev, ...uniqueNew]);
+    showToast(`Adding ${uniqueNew.length} associates...`, 'success');
+
+    try {
+      const token = localStorage.getItem('token');
+      // Sequential addition if no bulk endpoint, or just optimistic if server is slow
+      for (const name of uniqueNew) {
+        await fetch(`${import.meta.env.VITE_API_BASE_URL}/ia/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name })
+        }).catch(err => console.error(`Failed to add ${name}`, err));
+      }
+      showToast(`${uniqueNew.length} IAs added successfully!`, "success");
+      fetchIAs();
+    } catch (err) {
+      console.error("Error in bulk IA addition", err);
+    }
   };
 
   // Quietly re-fetches the current tab's data without showing the loading overlay.
@@ -289,33 +813,36 @@ const Dashboard = () => {
           return fields;
         };
 
-        // Map columns by position — same fixed order as the Excel paste handler
+        // Map columns by position — now for 21 columns
         const decodedArray = dataRows.map(line => {
           const col = parseCSVLine(line);
           const getStr = (i) => (col[i] !== undefined && col[i] !== '') ? col[i] : '';
           return {
-            channelCode:            getStr(0),
-            channelName:            getStr(1),
-            channelLink:            getStr(2),
-            platform:               getStr(3),
-            brandUniqueKey:         getStr(4),
-            productName:            getStr(5),
-            deliverables:           getStr(6),
-            brandPrice:             parseNum(col[7]),
-            deliverablesCount:      parseNum(col[8]),
-            requiredPrice:          parseNum(col[9]),
-            projectManager:         getStr(10),
-            projectManagerComment:  getStr(11),
-            projectManagerStatus:   getStr(12),
-            influencerAssociate:    getStr(13),
-            channelPrice:           parseNum(col[14]),
-            iaStatus:               getStr(15),
-            iaComment:              getStr(16),
-            postingDate:            getStr(17),
+            id: '', // Always empty while importing
+            channelCode: '', // Always empty while importing
+            channelName: getStr(0),
+            channelLink: getStr(1),
+            platform: getStr(2),
+            brandUniqueKey: getStr(3),
+            productName: getStr(4),
+            deliverables: getStr(5),
+            brandPrice: parseNum(col[6]),
+            deliverablesCount: parseNum(col[7]),
+            requiredPrice: parseNum(col[8]),
+            projectManager: getStr(9),
+            projectManagerComment: getStr(10),
+            projectManagerStatus: getStr(11),
+            influencerAssociate: getStr(12),
+            channelPrice: parseNum(col[13]),
+            iaStatus: getStr(14),
+            iaComment: getStr(15),
+            postingDate: getStr(16),
+            createdAt: getStr(17),
+            updatedAt: getStr(18),
           };
         });
 
-        console.log('🔥 CSV mapped to fixed keys:', decodedArray);
+        console.log('🔥 CSV mapped to 21 keys:', decodedArray);
 
         const token = localStorage.getItem('token');
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/channels/bulk`, {
@@ -379,7 +906,7 @@ const Dashboard = () => {
           return parseFloat(cleaned) || 0;
         };
 
-        // Parse tab-separated values exactly as they copy from their standard 18-column Excel sheet
+        // Parse tab-separated values exactly as they copy from their standard 21-column Excel sheet
         const newRecords = rows.map((row, index) => {
           const columns = row.split('\t');
 
@@ -387,24 +914,27 @@ const Dashboard = () => {
           const getStr = (idx) => (columns[idx] !== undefined && columns[idx].trim() !== '') ? columns[idx].trim() : '';
 
           return {
-            channelCode: getStr(0),
-            channelName: getStr(1),
-            channelLink: getStr(2),
-            platform: getStr(3),
-            brandUniqueKey: getStr(4),
-            productName: getStr(5),
-            deliverables: getStr(6),
-            brandPrice: parseNum(columns[7]),
-            deliverablesCount: parseNum(columns[8]),
-            requiredPrice: parseNum(columns[9]),
-            projectManager: getStr(10),
-            projectManagerComment: getStr(11),
-            projectManagerStatus: getStr(12),
-            influencerAssociate: getStr(13),
-            channelPrice: parseNum(columns[14]),
-            iaStatus: getStr(15),
-            iaComment: getStr(16),
-            postingDate: getStr(17)
+            id: '', // Always empty while pasting
+            channelCode: '', // Always empty while pasting
+            channelName: getStr(0),
+            channelLink: getStr(1),
+            platform: getStr(2),
+            brandUniqueKey: getStr(3),
+            productName: getStr(4),
+            deliverables: getStr(5),
+            brandPrice: parseNum(columns[6]),
+            deliverablesCount: parseNum(columns[7]),
+            requiredPrice: parseNum(columns[8]),
+            projectManager: getStr(9),
+            projectManagerComment: getStr(10),
+            projectManagerStatus: getStr(11),
+            influencerAssociate: getStr(12),
+            channelPrice: parseNum(columns[13]),
+            iaStatus: getStr(14),
+            iaComment: getStr(15),
+            postingDate: getStr(16),
+            createdAt: '',
+            updatedAt: '',
           };
         });
 
@@ -435,6 +965,11 @@ const Dashboard = () => {
   const [editFormData, setEditFormData] = useState(null);
 
   const [selectedRowIds, setSelectedRowIds] = useState([]);
+  const [pendingDropdowns, setPendingDropdowns] = useState({}); // { rowId: { fieldKey: newValue } }
+
+  // Custom Confirmation Modal State
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [idsToDelete, setIdsToDelete] = useState([]);
 
   const getRowId = (row, idx) => row.id || row.tempId || idx;
 
@@ -455,49 +990,70 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteSelected = async () => {
+  const handleDeleteSelected = () => {
     if (selectedRowIds.length === 0) {
       showToast('Please select at least one record to delete.', 'error');
       return;
     }
-    const token = localStorage.getItem('token');
-    let successCount = 0;
-    let failCount = 0;
-    try {
-      showToast(`Deleting ${selectedRowIds.length} record(s)...`, 'success');
-      await Promise.all(
-        selectedRowIds.map(async (id) => {
-          try {
-            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/channels/${id}`, {
-              method: 'DELETE',
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.status === 401) {
-              localStorage.removeItem('token');
-              navigate('/login');
-              return;
-            }
-            if (res.ok) {
-              successCount++;
-            } else {
-              failCount++;
-            }
-          } catch {
-            failCount++;
-          }
-        })
-      );
-      // Remove deleted rows from local state
+
+    // Filter for real database IDs (handles both numbers and strings, excludes local temp IDs)
+    const validIds = selectedRowIds.filter(id =>
+      id !== undefined &&
+      id !== null &&
+      !String(id).includes('temp_') &&
+      typeof id !== 'object'
+    );
+
+    if (validIds.length > 0) {
+      setIdsToDelete(validIds);
+      setShowDeleteConfirm(true);
+    } else {
+      // If only local records are selected, delete instantly
       setRowData(prev => prev.filter((row, idx) => !selectedRowIds.includes(getRowId(row, idx))));
       setSelectedRowIds([]);
-      if (failCount === 0) {
-        showToast(`Successfully deleted ${successCount} record(s).`, 'success');
-      } else {
-        showToast(`Deleted ${successCount}, failed ${failCount}.`, 'error');
+      showToast(`Removed local records.`, 'success');
+    }
+  };
+
+  const executeDelete = async () => {
+    const validIds = idsToDelete;
+    setShowDeleteConfirm(false);
+    setIdsToDelete([]);
+
+    const token = localStorage.getItem('token');
+
+    try {
+      showToast(`Deleting ${validIds.length} record(s)...`, 'success');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/channels/delete-bulk`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(validIds)
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
       }
+
+      if (!res.ok) {
+        showToast('Failed to delete records from server.', 'error');
+        return;
+      }
+
+      // If we reach here, server delete was successful. 
+      // Now remove all selected (both DB and local) from local state.
+      setRowData(prev => prev.filter((row, idx) => !selectedRowIds.includes(getRowId(row, idx))));
+      setSelectedRowIds([]);
+
+      showToast(`Successfully deleted ${validIds.length} record(s).`, 'success');
       silentRefresh();
     } catch (err) {
-      showToast('Error deleting records.', 'error');
+      console.error('Delete error:', err);
+      showToast('Error connecting to server for deletion.', 'error');
     }
   };
 
@@ -520,6 +1076,7 @@ const Dashboard = () => {
 
   const handleAddNewRecord = () => {
     const newRecord = {
+      id: '',
       channelCode: '',
       channelName: '',
       channelLink: '',
@@ -538,6 +1095,8 @@ const Dashboard = () => {
       iaStatus: '',
       iaComment: '',
       postingDate: '',
+      createdAt: '',
+      updatedAt: '',
       isNewUnsaved: true
     };
 
@@ -656,6 +1215,54 @@ const Dashboard = () => {
     setEditingRowIndex(null);
     setEditFormData(null);
   };
+
+  // Quick-edit handlers for always-visible dropdown cells
+  const handleQuickDropdownChange = (rowId, key, value) => {
+    setPendingDropdowns(prev => ({
+      ...prev,
+      [rowId]: { ...(prev[rowId] || {}), [key]: value }
+    }));
+  };
+
+  const handleQuickSave = async (row, idx) => {
+    const rowId = getRowId(row, idx);
+    const changes = pendingDropdowns[rowId];
+    if (!changes || !row.id) return;
+    try {
+      showToast('Saving...', 'success');
+      const token = localStorage.getItem('token');
+      const updatedRow = { ...row, ...changes };
+      updatedRow.brandPrice = parseFloat(updatedRow.brandPrice) || 0;
+      updatedRow.channelPrice = parseFloat(updatedRow.channelPrice) || 0;
+      updatedRow.requiredPrice = parseFloat(updatedRow.requiredPrice) || 0;
+      updatedRow.deliverablesCount = parseInt(updatedRow.deliverablesCount, 10) || 1;
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/channels/${row.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(updatedRow)
+      });
+      if (res.status === 401) { localStorage.removeItem('token'); navigate('/login'); return; }
+      if (!res.ok) throw new Error('Failed to save');
+      setRowData(prev => prev.map((r, i) => getRowId(r, i) === rowId ? { ...r, ...changes } : r));
+      setPendingDropdowns(prev => { const n = { ...prev }; delete n[rowId]; return n; });
+      showToast('Saved successfully!', 'success');
+    } catch {
+      showToast('Error saving record.', 'error');
+    }
+  };
+
+  const handleQuickCancelCell = (rowId, key) => {
+    setPendingDropdowns(prev => {
+      const rowPending = { ...(prev[rowId] || {}) };
+      delete rowPending[key];
+      if (Object.keys(rowPending).length === 0) {
+        const n = { ...prev };
+        delete n[rowId];
+        return n;
+      }
+      return { ...prev, [rowId]: rowPending };
+    });
+  };
   // ----------------------------------------
 
   // Clear stale data immediately when tab changes, then fetch fresh
@@ -721,6 +1328,7 @@ const Dashboard = () => {
     };
 
     fetchData();
+    fetchIAs();
 
     // Cancel the request if activeTab changes before this one completes
     return () => controller.abort();
@@ -730,10 +1338,10 @@ const Dashboard = () => {
   const displayData = rowData;
 
   // For analytics tab: use fixed ordered columns with display labels.
-  // For database tab: use dynamic columns from API response.
+  // For database tab: use formal fixed database headers.
   const activeColumns = activeTab === 'analytics'
     ? ANALYTICS_COLUMNS
-    : tableColumns.map(col => ({ key: col, label: col }));
+    : DATABASE_COLUMNS;
 
   // Column totals — only meaningful on database tab
   const fmt = (n) => n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -744,35 +1352,48 @@ const Dashboard = () => {
   const renderCell = (col, value, row) => {
     switch (col) {
       case 'platform':
-        return <TypeBadge value={value || ''} />;
+        return <HoverText text={value}><TypeBadge value={value || ''} /></HoverText>;
       case 'projectManagerStatus':
       case 'iaStatus':
-        return <StatusBadge value={value || ''} />;
+        return <HoverText text={value}><StatusBadge value={value || ''} /></HoverText>;
       case 'channelLink':
         return (
-          <div className="flex items-center justify-center gap-1.5 text-brand-400 hover:text-brand-300 hover:underline cursor-pointer">
-            {row.platform === 'Instagram' ? <Instagram size={14} className="text-pink-500 shrink-0" /> : <Youtube size={14} className="text-red-500 shrink-0" />}
-            {value}
-          </div>
+          <HoverText text={value}>
+            <div className="flex items-center justify-center gap-1.5 text-brand-400 hover:text-brand-300 hover:underline cursor-pointer">
+              {row.platform === 'Instagram' ? <Instagram size={14} className="text-pink-500 shrink-0" /> : <Youtube size={14} className="text-red-500 shrink-0" />}
+              <span className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] inline-block">{value}</span>
+            </div>
+          </HoverText>
         );
       case 'brandPrice':
-        return <span className="font-bold text-brand-accent whitespace-nowrap">{value}</span>;
+        return <HoverText text={value}><span className="font-bold text-brand-accent whitespace-nowrap">{value}</span></HoverText>;
       case 'requiredPrice':
-        return <span className="font-bold text-brand-500 whitespace-nowrap">{value}</span>;
+        return <HoverText text={value}><span className="font-bold text-brand-500 whitespace-nowrap">{value}</span></HoverText>;
       case 'channelPrice':
-        return <span className="font-bold text-gray-200 whitespace-nowrap">{value}</span>;
+        return <HoverText text={value}><span className="font-bold text-gray-200 whitespace-nowrap">{value}</span></HoverText>;
       case 'brandUniqueKey':
       case 'channelCode':
-        return <span className="font-mono text-gray-400">{value}</span>;
+        return <HoverText text={value}><span className="font-mono text-gray-400 text-[11px]">{value}</span></HoverText>;
       case 'channelName':
-        return <span className="font-bold text-white whitespace-nowrap"><ExpandableText text={value} /></span>;
+        return <HoverText text={value} className="font-bold text-white" />;
+      case 'projectManager':
+      case 'influencerAssociate':
+      case 'productName':
+      case 'deliverables':
       case 'projectManagerComment':
       case 'iaComment':
-        return <ExpandableText text={value} />;
       case 'postingDate':
-        return <span className="whitespace-nowrap text-brand-100 font-medium">{value}</span>;
+        return <HoverText text={value} />;
+      case 'createdAt':
+      case 'updatedAt': {
+        const d = value ? new Date(value) : null;
+        const formatted = d && !isNaN(d)
+          ? `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+          : value;
+        return <HoverText text={value}>{formatted}</HoverText>;
+      }
       default:
-        return <ExpandableText text={value} />;
+        return <HoverText text={value} />;
     }
   };
 
@@ -803,6 +1424,15 @@ const Dashboard = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        show={showDeleteConfirm}
+        title="Confirm Deletion"
+        message={`Are you sure you want to delete ${idsToDelete.length} selected record(s)? This action is permanent and cannot be undone.`}
+        confirmText="Delete Anyway"
+        onConfirm={executeDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
 
       {/* Undo/Save Toolbar for Pasted Records */}
       <AnimatePresence>
@@ -878,9 +1508,9 @@ const Dashboard = () => {
 
             {/* Logo area */}
             <div className="flex items-center gap-2 pr-6 border-r border-white/5">
-              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
+              {/* <div className="w-6 h-6 rounded-md bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
                 <Share2 size={12} className="text-brand-900" />
-              </div>
+              </div> */}
               <span className="font-bold tracking-tight text-white uppercase text-xs">Enmmey</span>
             </div>
 
@@ -891,13 +1521,13 @@ const Dashboard = () => {
                   onClick={() => handleTabSwitch('database')}
                   className={`px-4 h-full transition-colors flex items-center gap-2 text-sm font-medium border-b-2 ${activeTab === 'database' ? 'text-brand-400 border-brand-500 bg-brand-500/5' : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'}`}
                 >
-                  Manage Database
+                  Channel Co-ordination
                 </button>
                 <button
                   onClick={() => handleTabSwitch('analytics')}
                   className={`px-4 h-full transition-colors flex items-center gap-2 text-sm font-medium border-b-2 ${activeTab === 'analytics' ? 'text-brand-400 border-brand-500 bg-brand-500/5' : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'}`}
                 >
-                  Analytics
+                  Posting Schedule
                 </button>
               </nav>
 
@@ -928,6 +1558,12 @@ const Dashboard = () => {
           <div className="flex flex-wrap items-center gap-2.5 text-[13px]">
             <button onClick={handleAddNewRecord} className="flex items-center gap-1.5 bg-brand-500 hover:bg-brand-accent text-brand-900 px-3 py-1.5 rounded-md font-bold transition-all shadow-lg shadow-brand-500/20">
               <Plus size={14} /> Add New Record
+            </button>
+            <button
+              onClick={handleAddIA}
+              className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-3 py-1.5 rounded-md font-medium transition-all"
+            >
+              <Plus size={14} /> Add IA
             </button>
             <label className={`flex items-center gap-1.5 border px-3 py-1.5 rounded-md font-bold transition-all ${isUploading ? 'opacity-50 cursor-not-allowed bg-brand-500/10 text-brand-400/50 border-brand-500/10' : 'bg-brand-500/20 hover:bg-brand-500/30 text-brand-400 border-brand-500/30 cursor-pointer'}`}>
               {isUploading ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} />}
@@ -977,8 +1613,8 @@ const Dashboard = () => {
               onClick={handleRefresh}
               disabled={isRefreshing || isLoading}
               className={`flex items-center gap-1.5 text-[13px] border px-3 py-1.5 rounded-md transition-all ${isRefreshing
-                  ? 'bg-brand-500/10 text-brand-400 border-brand-500/20 cursor-not-allowed'
-                  : 'bg-white/5 hover:bg-white/10 text-white border-white/10'
+                ? 'bg-brand-500/10 text-brand-400 border-brand-500/20 cursor-not-allowed'
+                : 'bg-white/5 hover:bg-white/10 text-white border-white/10'
                 }`}
             >
               <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
@@ -1065,8 +1701,8 @@ const Dashboard = () => {
                       <th
                         key={idx}
                         className={`py-3 px-4 font-semibold uppercase tracking-wider text-center whitespace-nowrap relative group ${col.key === 'id'
-                            ? 'sticky left-[50px] z-30 bg-[#0F1014] border-r border-white/5'
-                            : ''
+                          ? 'sticky left-[50px] z-30 bg-[#0F1014] border-r border-white/5'
+                          : ''
                           }`}
                       >
                         <span className={hasTotal ? 'cursor-help border-b border-dashed border-gray-500/50 pb-px' : ''}>
@@ -1121,14 +1757,55 @@ const Dashboard = () => {
                         <td
                           key={colIdx}
                           className={`px-3 text-center ${isEditing ? 'py-2' : 'py-3'} ${col.key === 'id'
-                              ? 'sticky left-[50px] z-10 border-r border-white/5'
-                              : ''
+                            ? 'sticky left-[50px] z-10 border-r border-white/5'
+                            : ''
                             }`}
                           style={col.key === 'id' ? { background: isEditing ? '#151a08' : '#0F1014' } : undefined}
                         >
                           {isEditing ? (
                             col.key === 'id' ? (
                               <span className="text-gray-500 font-mono text-[12px]">{editFormData[col.key] || 'N/A'}</span>
+                            ) : (col.key === 'projectManagerStatus' || col.key === 'iaStatus') ? (
+                              <select
+                                value={editFormData[col.key] || ''}
+                                onChange={(e) => handleEditChange(col.key, e.target.value)}
+                                className="bg-[#0d1108] border border-brand-500/40 rounded px-2 py-1.5 text-white text-[13px] w-full min-w-[160px] focus:outline-none focus:border-brand-500 focus:bg-white/5 transition-all text-center cursor-pointer appearance-none"
+                                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', paddingRight: '28px' }}
+                              >
+                                {(col.key === 'iaStatus' ? IA_STATUS_LIST : PM_STATUS_LIST).map(opt => (
+                                  <option key={opt} value={opt} style={{ background: '#0d1108', color: '#fff' }}>{opt}</option>
+                                ))}
+                              </select>
+                            ) : (col.key === 'platform' || col.key === 'brandUniqueKey' || col.key === 'projectManager' || col.key === 'influencerAssociate') ? (
+                              <select
+                                value={editFormData[col.key] || ''}
+                                onChange={async (e) => {
+                                  if (col.key === 'influencerAssociate' && e.target.value === 'ADD_NEW_IA') {
+                                    const newName = await handleAddIA();
+                                    if (newName) handleEditChange(col.key, newName);
+                                  } else {
+                                    handleEditChange(col.key, e.target.value);
+                                  }
+                                }}
+                                className="bg-[#0d1108] border border-brand-500/40 rounded px-2 py-1.5 text-white text-[13px] w-full min-w-[160px] focus:outline-none focus:border-brand-500 focus:bg-white/5 transition-all text-center cursor-pointer appearance-none"
+                                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', paddingRight: '28px' }}
+                              >
+                                {(col.key === 'platform' ? PLATFORM_LIST :
+                                  col.key === 'brandUniqueKey' ? BRAND_KEY_LIST :
+                                    col.key === 'projectManager' ? PM_LIST :
+                                      iaList).map(opt => (
+                                        <option key={opt} value={opt} style={{ background: '#0d1108', color: '#fff' }}>{opt}</option>
+                                      ))
+                                }
+                                {col.key === 'influencerAssociate' && (
+                                  <option value="ADD_NEW_IA" style={{ background: '#0d1108', color: '#c4d600', fontStyle: 'italic', fontWeight: 'bold' }}>+ Add New Associate...</option>
+                                )}
+                              </select>
+                            ) : col.key === 'deliverables' ? (
+                              <DeliverablesPaster 
+                                value={editFormData[col.key] || ''}
+                                onChange={(newVal) => handleEditChange(col.key, newVal)}
+                              />
                             ) : (
                               <input
                                 type="text"
@@ -1138,7 +1815,94 @@ const Dashboard = () => {
                                 placeholder={`Enter ${col.label}`}
                               />
                             )
-                          ) : renderCell(col.key, row[col.key], row)}
+                          ) : (col.key === 'projectManagerStatus' || col.key === 'iaStatus') ? (() => {
+                            const rowId = getRowId(row, idx);
+                            const pendingVal = pendingDropdowns[rowId]?.[col.key];
+                            const displayVal = pendingVal !== undefined ? pendingVal : (row[col.key] || '');
+                            const hasPending = pendingVal !== undefined;
+                            const isIa = col.key === 'iaStatus';
+                            return (
+                              <div className="flex flex-col items-center gap-1.5">
+                                <QuickStatusDropdown
+                                  value={displayVal}
+                                  onChange={(newVal) => handleQuickDropdownChange(rowId, col.key, newVal)}
+                                  options={isIa ? IA_STATUS_LIST : PM_STATUS_LIST}
+                                  chipStyles={isIa ? IA_STATUS_CHIP_STYLES : PM_STATUS_CHIP_STYLES}
+                                />
+                                {hasPending && (
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => handleQuickSave(row, idx)}
+                                      className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-brand-500/20 hover:bg-brand-500/40 text-brand-300 text-[10px] font-bold border border-brand-500/30 transition-all"
+                                    >
+                                      <Check size={10} /> Save
+                                    </button>
+                                    <button
+                                      onClick={() => handleQuickCancelCell(rowId, col.key)}
+                                      className="flex items-center px-1 py-0.5 rounded bg-white/5 hover:bg-red-500/10 text-gray-400 hover:text-red-400 text-[10px] border border-white/10 hover:border-red-500/20 transition-all"
+                                    >
+                                      <X size={10} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })() : (col.key === 'platform' || col.key === 'brandUniqueKey' || col.key === 'projectManager' || col.key === 'influencerAssociate') ? (() => {
+                            const rowId = getRowId(row, idx);
+                            const pendingVal = pendingDropdowns[rowId]?.[col.key];
+                            const displayVal = pendingVal !== undefined ? pendingVal : (row[col.key] || '');
+                            const hasPending = pendingVal !== undefined;
+
+                            let options = [];
+                            let chipStyles = {};
+                            if (col.key === 'platform') { options = PLATFORM_LIST; chipStyles = PLATFORM_CHIP_STYLES; }
+                            else if (col.key === 'brandUniqueKey') { options = BRAND_KEY_LIST; }
+                            else if (col.key === 'projectManager') { options = PM_LIST; }
+                            else { options = iaList; }
+
+                            return (
+                              <div className="flex flex-col items-center gap-1.5">
+                                  {col.key === 'influencerAssociate' ? (
+                                    <QuickStatusDropdown
+                                      value={displayVal}
+                                      onChange={(newVal) => handleQuickDropdownChange(rowId, col.key, newVal)}
+                                      options={iaList}
+                                      chipStyles={undefined}
+                                      onAdd={handleAddIA}
+                                      onBulkAdd={handleBulkAddIA}
+                                    />
+                                 ) : col.key === 'deliverables' ? (
+                               <DeliverablesPaster 
+                                 value={displayVal}
+                                 onChange={(newVal) => handleQuickDropdownChange(rowId, col.key, newVal)}
+                               />
+                             ) : (
+                                    <QuickStatusDropdown
+                                      value={displayVal}
+                                      onChange={(newVal) => handleQuickDropdownChange(rowId, col.key, newVal)}
+                                      options={options}
+                                      chipStyles={chipStyles}
+                                    />
+                                  )}
+                                {hasPending && (
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => handleQuickSave(row, idx)}
+                                      className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-brand-500/20 hover:bg-brand-500/40 text-brand-300 text-[10px] font-bold border border-brand-500/30 transition-all"
+                                    >
+                                      <Check size={10} /> Save
+                                    </button>
+                                    <button
+                                      onClick={() => handleQuickCancelCell(rowId, col.key)}
+                                      className="flex items-center px-1 py-0.5 rounded bg-white/5 hover:bg-red-500/10 text-gray-400 hover:text-red-400 text-[10px] border border-white/10 hover:border-red-500/20 transition-all"
+                                    >
+                                      <X size={10} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })() : renderCell(col.key, row[col.key], row)}
                         </td>
                       ))}
                       {activeColumns.length === 0 && (
